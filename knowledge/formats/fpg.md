@@ -102,11 +102,22 @@ Addresses are in the decrypted executable as loaded by Ghidra 12.1.3.
    - For images larger than 0x204000 bytes, a slice from that offset is copied into a 64 KiB side buffer. For images up to 2 MiB, 0x200000–0x203FFF is mapped to that buffer: a save/backup-RAM style window.
    - Audio is set up with a 7,670,453 Hz master clock (NTSC 68000) and 48 kHz output.
    - **We found no header rewrite or byte patch** between inflate and mapping in this path.
-4. **Other users of `%s.68K`.** Two more routines build `.68K` names: 0x00193860 and 0x0019a530. They're probably the lock-on cartridge or extra-content paths. They aren't analysed yet.
+4. **Per-game hooks (break slots).**
+   - After the machine is built, 39 of the 40 per-game routines register one or more PPU callbacks at fixed 68000 addresses through 0x0015cd80. Example: the Sonic the Hedgehog routine at 0x0013a770 registers one at 0x01C5DC. Seven other routines also call it, including 0x00142810, 0x00143d20, 0x00148900 and 0x001414d8 (the second `.68K` users).
+   - The core has 48 such slots.
+   - Registering a slot saves the original opcode and its decoder entry, then writes the 16-bit word 0x4848 at that address in the core's **instruction-fetch copy** of the ROM. Removing the slot restores the original word.
+   - When the 68000 fetches that word, the core calls the PPU callback and then runs the saved original instruction.
+   - The data copy the 68000 reads from is never modified.
+   - What the callbacks do (trophies, saves, frontend events) is not analysed yet.
+   - A port can reproduce the hooks as PC-address callbacks in our own core without touching ROM bytes.
+5. **Other users of `%s.68K`.** Two more routines build `.68K` names: 0x00193860 and 0x0019a530. They're probably the lock-on cartridge or extra-content paths. They aren't analysed yet.
 
 ## Verification
 - **Round trip.** `sugc-lab roundtrip` parses each archive, rebuilds it from the parsed entries and byte-compares it with the original. Results are recorded in `docs/STATUS.md`.
-- **Pending.** Boot one game in RPCS3, dump guest memory over GDB, and confirm the inflated ROM is byte-identical to the 68000 ROM mapping (Phase 1 verification plan).
+- **ROM in guest memory, 2026-10-06.** RPCS3 with the lab config, Sonic the Hedgehog started from the menu, guest heap dumped over GDB (94 MiB).
+  - The 512 KiB image appears twice. One copy is **byte-identical** to our extracted entry.
+  - The other is identical except for **one 16-bit word at ROM offset 0x1C5DC**: the break-slot opcode described above, at exactly the address the Sonic routine registers.
+  - So the ROM bytes come straight from the archive. The only runtime change is the core's hook marker.
 
 ## Open questions
 - **Byte order.** Where exactly the little-endian table is byte-swapped after load. The lookup reads native big-endian words, so a swap must happen in the loader states. Status: hypothesis.

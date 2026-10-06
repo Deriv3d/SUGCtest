@@ -34,6 +34,8 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - FPG archive format and the archive-to-emulator path:
   [../knowledge/formats/fpg.md](../knowledge/formats/fpg.md) (C-011 to C-014).
 - 38 of 40 bundled Genesis ROMs pass their internal header checksum (C-015).
+- ROM in RPCS3 guest memory is byte-identical to our extracted image (C-013). The core's only
+  change is a hook marker in its instruction-fetch copy (break slots, C-016; 39 of 40 games).
 
 ## Unknown
 
@@ -41,6 +43,7 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
 - `streams/*.spr` scene-graph record layout (compression layer and stream roles done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MSF audio header, MP4 codec parameters.
 - Where the archive's little-endian table is byte-swapped after load.
+- What the per-game break-slot callbacks do (C-016).
 - Ghidra SPU route (C-004).
 
 ## Blocked on the owner
