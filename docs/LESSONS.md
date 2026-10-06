@@ -99,6 +99,10 @@ on the next game and it must be re-verified there.
 - **Docs drifted from reality** [carries]. PHASE0.md still suggests `D:\sugc-lab` while
   the lab is at `C:\SUGC-LAB`. Write real paths into the plan as soon as the owner gives
   them.
+- **CI was red on main from the first commit and nobody noticed** (found 2026-10-06)
+  [carries]. The build job runs `cargo fmt --check` and `clippy -D warnings`, which the
+  scaffold never ran locally, and four pushes to main went by without anyone reading CI.
+  Run the same fmt/clippy/test commands as CI before every push, and check CI after it.
 - **Shared project folder is noexec** [carries]. Builds from `/mnt/project-files` fail
   unless `CARGO_TARGET_DIR` points outside it.
 
