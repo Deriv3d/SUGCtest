@@ -69,7 +69,7 @@ The brief's "105 non-ROM entries" (147 − 40 − 2) break down as: 6 + 16 + 9 a
 **`flog_c.fpg`, 12 entries:**
 - 2 PNG images (320×176)
 - 1 text file (named `.SR`)
-- 9 binaries that share a 4-byte lead pattern, probably fonts (the executable builds `fonts\%s.rf` names); not yet confirmed.
+- 9 localized UI string tables, one per language/region variant ([strings.md](strings.md)). An earlier guess that they were fonts was wrong.
 
 Of the 40 Genesis images, **38 pass their internal header checksum and 2 don't**. The header's ROM-end field matches the image size in all 40. Two failures is normal for some retail cartridges; it doesn't by itself mean they were patched.
 

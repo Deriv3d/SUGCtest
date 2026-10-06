@@ -74,6 +74,8 @@ pub struct Texture {
     pub pitch: u32,
     /// Offset in GPU local memory at runtime.
     pub offset: u32,
+    /// Channel remap word (see [`apply_remap`]); 0xAAE4 is the identity.
+    pub remap: u32,
 }
 
 impl Texture {
@@ -107,6 +109,7 @@ impl Texture {
             height,
             pitch: read_u32(d, 16),
             offset: read_u32(d, 20),
+            remap: read_u32(d, 4),
         })
     }
 
@@ -219,28 +222,31 @@ pub fn decode_rgba(t: &Texture, data: &[u8]) -> Result<Vec<u8>, TextureError> {
                 }
             }
         }
-        Format::A8R8G8B8 | Format::D8R8G8B8 => {
-            let pitch = if t.linear && t.pitch as usize >= w * 4 {
+        Format::A8R8G8B8 | Format::D8R8G8B8 | Format::G8B8 => {
+            let bpp = if t.format == Format::G8B8 { 2 } else { 4 };
+            let pitch = if t.linear && t.pitch as usize >= w * bpp {
                 t.pitch as usize
             } else {
-                w * 4
+                w * bpp
             };
             for y in 0..h {
                 for x in 0..w {
                     let src = if t.linear {
-                        y * pitch + x * 4
+                        y * pitch + x * bpp
                     } else {
-                        swizzle(x, y, w, h) * 4
+                        swizzle(x, y, w, h) * bpp
                     };
                     let s = data
-                        .get(src..src + 4)
+                        .get(src..src + bpp)
                         .ok_or(TextureError::Truncated { index: 0 })?;
-                    let a = if t.format == Format::D8R8G8B8 {
-                        255
-                    } else {
-                        s[0]
+                    // Texel as stored channels A, R, G, B.
+                    let argb = match t.format {
+                        Format::G8B8 => [0, 0, s[0], s[1]],
+                        Format::D8R8G8B8 => [255, s[1], s[2], s[3]],
+                        _ => [s[0], s[1], s[2], s[3]],
                     };
-                    out[(y * w + x) * 4..][..4].copy_from_slice(&[s[1], s[2], s[3], a]);
+                    let [a, r, g, b] = apply_remap(t.remap, argb);
+                    out[(y * w + x) * 4..][..4].copy_from_slice(&[r, g, b, a]);
                 }
             }
         }
@@ -266,6 +272,24 @@ pub fn swizzle(x: usize, y: usize, w: usize, h: usize) -> usize {
             bit += 1;
         }
         i += 1;
+    }
+    out
+}
+
+/// Apply a GCM channel remap word to a stored A, R, G, B texel.
+///
+/// Bits 0..8 pick the source channel for outputs A, R, G, B (2 bits each: 0=A, 1=R, 2=G,
+/// 3=B); bits 8..16 pick the operation for the same outputs (2 bits each: 0=zero, 1=one,
+/// 2=use the selected source).
+pub fn apply_remap(remap: u32, argb: [u8; 4]) -> [u8; 4] {
+    let mut out = [0u8; 4];
+    for (k, o) in out.iter_mut().enumerate() {
+        let src = ((remap >> (2 * k)) & 3) as usize;
+        *o = match (remap >> (8 + 2 * k)) & 3 {
+            0 => 0,
+            1 => 255,
+            _ => argb[src],
+        };
     }
     out
 }
@@ -358,6 +382,7 @@ mod tests {
         d[0] = fmt;
         d[1] = mips;
         d[2] = 2;
+        d[4..8].copy_from_slice(&0xAAE4u32.to_be_bytes());
         d[8..10].copy_from_slice(&w.to_be_bytes());
         d[10..12].copy_from_slice(&h.to_be_bytes());
         d[12..14].copy_from_slice(&1u16.to_be_bytes());
@@ -434,6 +459,26 @@ mod tests {
         block[8..10].copy_from_slice(&0x001Fu16.to_le_bytes()); // blue
         let rgba = decode_rgba(&t, &block).unwrap();
         assert!(rgba.chunks(4).all(|p| p == [0, 0, 255, 128]));
+    }
+
+    #[test]
+    fn decodes_g8b8_as_luminance_alpha() {
+        let mut d = desc(0x8B, 1, 2, 1, 0);
+        d[4..8].copy_from_slice(&0xAAFEu32.to_be_bytes());
+        let t = Texture::parse(&d).unwrap();
+        assert_eq!(t.data_size(), 4);
+        // Swizzled 2x1: texel (1,0) is at Morton index 1. Stored bytes are G then B.
+        let rgba = decode_rgba(&t, &[0, 255, 128, 255]).unwrap();
+        assert_eq!(rgba, [255, 255, 255, 0, 255, 255, 255, 128]);
+    }
+
+    #[test]
+    fn remap_ops_and_sources() {
+        let argb = [1, 2, 3, 4];
+        assert_eq!(apply_remap(0xAAE4, argb), argb);
+        // All outputs from B, then A forced to one.
+        assert_eq!(apply_remap(0xA9FF, argb), [255, 4, 4, 4]);
+        assert_eq!(apply_remap(0x0000, argb), [0, 0, 0, 0]);
     }
 
     #[test]

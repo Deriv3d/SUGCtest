@@ -75,8 +75,11 @@ The owner has confirmed that decoded textures match the game (see Verification).
 ## Round trip and decode on the owner's disc (2026-10-06)
 - `sugc-lab roundtrip`: `ui.spr` **PASS** (4 streams, byte-identical, 4/4 inflate); `global_binary.spr`
   **PASS** (2 streams, byte-identical, 2/2 inflate).
-- `sugc-lab spr-textures`: 232 of 234 textures decoded to PNG in the lab. The other 2 are G8B8
-  (two-channel) textures, whose decoding isn't implemented yet.
+- `sugc-lab spr-textures`: **234 of 234** textures decoded to PNG in the lab.
+- The two G8B8 textures use channel remap 0xAAFE: RGB comes from the B byte (always 255) and alpha from
+  the G byte (16 levels). That makes them white luminance+alpha glyph sheets, i.e. the font atlas (512×512),
+  stored once in the loading-screen stream and once in the main UI stream. All other textures use the
+  identity remap 0xAAE4.
 
 ## Verification
 - 2026-10-06: the owner checked ten decoded textures (the six 1024×1024 ones and four others) and reports they
@@ -88,5 +91,5 @@ The owner has confirmed that decoded textures match the game (see Verification).
 - **Fix-up.** How pointers are fixed up if the heap base differs. Settling check: the loader near 0x0003f7e0 / 0x0003fa10, and a GDB dump of the UI after load.
 
 ## Next steps
-1. G8B8 decode, and what the two-channel textures are used for.
+1. Glyph metrics for the font atlas: not yet found in the structure streams.
 2. Map the scene-graph records (element names, positions, texture references) for the viewer.
