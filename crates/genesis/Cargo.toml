@@ -1,0 +1,11 @@
+[package]
+name = "genesis"
+version = "0.1.0"
+description = "Mega Drive / Genesis machine: 68000, Z80, VDP and sound wired together (game-agnostic)."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+m68k = { path = "../m68k" }
+z80 = { path = "../z80" }

@@ -1,0 +1,14 @@
+[package]
+name = "sugc-sonic"
+version = "0.1.0"
+description = "Play Sonic the Hedgehog from the user's own SUGC disc (SUGC-specific frontend)."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+genesis = { path = "../genesis" }
+sugc-formats = { path = "../sugc-formats" }
+png = "0.18"
+eframe = "0.36"
+rodio = "0.22"

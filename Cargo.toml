@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/asset-browser", "crates/m68k", "crates/z80", "crates/sugc-formats", "crates/sugc-lab", "crates/sugc-viewer", "tools/publish-check"]
+members = ["crates/asset-browser", "crates/genesis", "crates/m68k", "crates/z80", "crates/sugc-formats", "crates/sugc-lab", "crates/sugc-sonic", "crates/sugc-viewer", "tools/publish-check"]
 
 [workspace.package]
 edition = "2024"

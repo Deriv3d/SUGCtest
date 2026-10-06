@@ -1353,6 +1353,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "genesis"
+version = "0.1.0"
+dependencies = [
+ "m68k",
+ "z80",
+]
+
+[[package]]
 name = "gethostname"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3334,6 +3342,17 @@ name = "sugc-lab"
 version = "0.1.0"
 dependencies = [
  "png",
+ "sugc-formats",
+]
+
+[[package]]
+name = "sugc-sonic"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "genesis",
+ "png",
+ "rodio",
  "sugc-formats",
 ]
 
