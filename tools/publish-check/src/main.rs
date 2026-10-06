@@ -227,9 +227,11 @@ impl GameIndex {
             return Some(src.clone());
         }
         // Aligned 4 KiB blocks; skip blocks that are all one byte value (padding).
-        data.chunks_exact(BLOCK)
+        data.as_chunks::<BLOCK>()
+            .0
+            .iter()
             .filter(|c| c.iter().any(|&b| b != c[0]))
-            .find(|c| self.blocks.contains(&sha(c)))
+            .find(|c| self.blocks.contains(&sha(*c)))
             .map(|_| "a 4 KiB block of an extracted file".into())
     }
 }
@@ -248,7 +250,7 @@ fn index_game_dir(dir: &Path) -> GameIndex {
             continue;
         }
         idx.whole.insert(sha(&data), rel.clone());
-        for c in data.chunks_exact(BLOCK) {
+        for c in data.as_chunks::<BLOCK>().0 {
             if c.iter().any(|&b| b != c[0]) {
                 idx.blocks.insert(sha(c));
             }

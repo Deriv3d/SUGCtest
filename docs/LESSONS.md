@@ -103,6 +103,8 @@ on the next game and it must be re-verified there.
   [carries]. The build job runs `cargo fmt --check` and `clippy -D warnings`, which the
   scaffold never ran locally, and four pushes to main went by without anyone reading CI.
   Run the same fmt/clippy/test commands as CI before every push, and check CI after it.
+  CI also uses the latest stable Rust, which brought a new clippy lint the local
+  toolchain didn't know; test with the same toolchain as CI or pin one in the repo.
 - **Shared project folder is noexec** [carries]. Builds from `/mnt/project-files` fail
   unless `CARGO_TARGET_DIR` points outside it.
 
