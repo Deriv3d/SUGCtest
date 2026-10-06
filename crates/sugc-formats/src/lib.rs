@@ -8,4 +8,5 @@
 pub mod fpg;
 pub mod msf;
 pub mod spr;
+pub mod strtab;
 pub mod texture;

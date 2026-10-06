@@ -27,6 +27,14 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
   byte-identical, 147/147 inflate), `flog_c.fpg` **PASS** (12 entries, byte-identical,
   12/12 inflate).
 
+- `crates/asset-browser` (game-agnostic) + `crates/sugc-viewer` (SUGC source): a desktop viewer for the
+  user's own disc. It lists archive entries, UI textures and the music, shows images and string tables,
+  and plays audio. Run `sugc-viewer <PS3_GAME/USRDIR>`; add `--check` to decode everything without a window.
+  On the owner's disc, `--check` gives 394 assets, 0 failures (285 images, 18 audio, 9 string tables,
+  82 info). A rebuilt menu isn't possible yet; it's blocked on the sprite-to-texture link (C-020).
+- Windows builds with the GNU Rust toolchain need a full MinGW-w64 (binutils `as`/`dlltool`) on PATH
+  for the `windows` crates the viewer pulls in. The lab uses a portable WinLibs build.
+
 ## Confirmed findings
 
 - One PPU executable; ROMs in one zlib-packed archive (C-001).
@@ -56,7 +64,8 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 ## Blocked on the owner
 
-- Nothing at the moment. (RSX captures must be made by hand from RPCS3's menu, C-010.)
+- A listening check of the decoded music (C-019) and a look at the viewer.
+- Otherwise nothing. (RSX captures must be made by hand from RPCS3's menu, C-010.)
 
 ## Known tool quirks
 
