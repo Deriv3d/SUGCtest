@@ -1,0 +1,8 @@
+#!/bin/sh
+# Install with: git config core.hooksPath lab-scripts
+# Checks only what is being committed. Pass the lab extraction dir to also catch
+# copied or renamed game files: set SUGC_LAB_EXTRACT to that folder.
+if [ -n "$SUGC_LAB_EXTRACT" ]; then
+  exec cargo run -q -p publish-check -- --staged --game-dir "$SUGC_LAB_EXTRACT" .
+fi
+exec cargo run -q -p publish-check -- --staged .

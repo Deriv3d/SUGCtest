@@ -1,0 +1,13 @@
+/target
+# The lab (extracted game, Ghidra projects, captures, golden data) lives OUTSIDE this repo.
+# These patterns are a second line of defence; publish-check is the first.
+/lab/
+*.iso
+*.dec.iso
+EBOOT.BIN
+PARAM.SFO
+*.gpr
+*.rep/
+*.gzf
+*.rdc
+*.dmp
