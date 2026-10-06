@@ -57,14 +57,13 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
 - Font glyph metrics; names of the 9 string tables.
 - `streams/*.spr` scene-graph record layout (compression layer and stream roles done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MP4 codec parameters.
-- MSF decode needs an owner listening check (C-019).
 - Where the archive's little-endian table is byte-swapped after load.
 - What the per-game break-slot callbacks do (C-016).
 - Ghidra SPU route (C-004).
 
 ## Blocked on the owner
 
-- A listening check of the decoded music (C-019) and a look at the viewer.
+- A look at the viewer, and a menu capture for texture verification.
 - Otherwise nothing. (RSX captures must be made by hand from RPCS3's menu, C-010.)
 
 ## Known tool quirks
