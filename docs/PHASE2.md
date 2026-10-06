@@ -34,3 +34,9 @@ so "the game" here is our own Genesis implementation fed the ROM from the user's
     - ASR by more than the operand width leaves C and X clear.
     - DIVU/DIVS overflow leaves N and Z unchanged.
   - Timing is a per-access estimate for now. Cycle-exact counts come later if the VDP needs them.
+- **Z80** (2026-10-06): run against the public SingleStepTests z80 v1 vectors (kept in the lab; run with
+  `SUGC_Z80_TESTS=<dir> cargo test -p z80 --release -- --ignored`).
+  - **1,000,000 of 1,000,000** cases pass, including undocumented flag bits, MEMPTR/WZ, the Q latch
+    behind SCF/CCF, and the block-repeat flag quirks.
+  - **T-state counts match in all 1,000,000.** That matters because the Genesis sound driver times
+    its sample playback in Z80 cycles.

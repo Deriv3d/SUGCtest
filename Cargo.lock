@@ -4771,6 +4771,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "z80"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "zbus"
 version = "5.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
