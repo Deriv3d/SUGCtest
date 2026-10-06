@@ -70,7 +70,7 @@ candidate descriptor.
 - **Colour byte order:** for 180 of 189 DXT textures of 32×32 or more, block colours are smoother read as
   little-endian. The 9 exceptions are DXT5 textures, probably mostly-flat colour with detail in alpha.
 
-The owner still needs to confirm that a few decoded textures match the game; see Verification.
+The owner has confirmed that decoded textures match the game (see Verification).
 
 ## Round trip and decode on the owner's disc (2026-10-06)
 - `sugc-lab roundtrip`: `ui.spr` **PASS** (4 streams, byte-identical, 4/4 inflate); `global_binary.spr`
@@ -79,8 +79,9 @@ The owner still needs to confirm that a few decoded textures match the game; see
   (two-channel) textures, whose decoding isn't implemented yet.
 
 ## Verification
-- Pending: the owner compares a few decoded textures with the game's menus. Later: a RenderDoc capture of
-  the menu, compared texture-for-texture.
+- 2026-10-06: the owner checked ten decoded textures (the six 1024×1024 ones and four others) and reports they
+  all look right: real menu, box and border art, with no scrambling or colour swaps.
+- Later: a texture-for-texture comparison with a RenderDoc capture of the menu.
 
 ## Open questions
 - **Header page.** Its first word of each per-stream record (2, 6, 18, 111 in `ui.spr`) has no known meaning yet.
