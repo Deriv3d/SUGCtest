@@ -4,6 +4,10 @@ Compiled from [LESSONS.md](LESSONS.md) on 2026-10-06, while the SUGC trial run w
 Phase 1. Refresh it from LESSONS.md before using it; later phases of SUGC (PPU
 recompilation, SPU rewrites, renderer) had not been tried when this was written.
 
+This prompt is meant to be pasted into a **fresh project with none of the trial's
+context**, so everything the new session needs is written out below. It names the trial
+repo only as optional reference material.
+
 How to read the marks below: **(verified on SUGC)** means we saw it work or fail on the
 trial run. **(inference)** means we expect it from general knowledge of Uncharted 2 and
 the PS3, but have not checked it on this game. Settle every inference in Phase 0 before
@@ -15,9 +19,13 @@ Copy everything below the line as the opening message of the new project.
 
 You are my lead engineer on a long-running project: a native PC port of Uncharted 2:
 Among Thieves (PS3), built from the game files I own. Rust wherever that is sensible. This
-follows a trial run on Sonic's Ultimate Genesis Collection (SUGC), whose repo and lessons
-log you can read at https://github.com/Deriv3d/SUGCtest (`docs/LESSONS.md`,
-`knowledge/claims.md`). Reuse its tooling; do not assume its findings apply here.
+follows a trial run on Sonic's Ultimate Genesis Collection (SUGC, a PS3 collection of
+Sega Genesis games). That trial was scoped to one question: does rewriting an RPCS3 game
+natively in Rust work? It took one game in the collection, Sonic 1, end to end. Everything
+you need from it is written into this prompt. If this project can reach
+https://github.com/Deriv3d/SUGCtest, its `docs/LESSONS.md`, `knowledge/claims.md`,
+`tools/publish-check` and lab scripts are useful reference and can be copied, but don't
+depend on it, and don't assume its findings apply to this game.
 
 ## What this game is (verify in Phase 0, do not assume)
 
@@ -39,9 +47,12 @@ My understanding, all of it **inference** until you confirm it:
   RPCS3 running that image is the ground-truth oracle.
 - The repo must never contain game assets, keys, the executable, extracted or decompiled
   game code, copied middleware, or any data from the disc. Users supply their own disc;
-  a local pipeline extracts what is needed. Reuse SUGC's `tools/publish-check` (CI plus
-  pre-commit hook) from the first commit, and extend its rules for this game's container
-  formats once you know them.
+  a local pipeline extracts what is needed. From the first commit, add a `publish-check`
+  tool that runs in CI and as a pre-commit hook. It refuses ISO/SELF/PKG/SFO files, PPU and
+  SPU ELFs, unknown binaries outside an allowlist, decompiler-style names (`FUN_`, `DAT_`
+  and the like), key-like hex strings, and any file or aligned 4 KiB block whose hash
+  matches a file in the local extraction. Its tests use synthetic files only. Copy SUGC's
+  if the repo is reachable, then extend its rules for this game's container formats.
 - Do not help bypass DRM, anti-cheat, or online services.
 - Tell me what you need from me in one batched message: disc image path, RPCS3 folder and
   version, an empty lab folder, which tools are installed, and the GitHub repo.
@@ -90,7 +101,7 @@ My understanding, all of it **inference** until you confirm it:
   grouping them by what they do, which on SUGC worked without any disassembly.
 - **Captures** (verified on SUGC): RenderDoc in-app capture of RPCS3 on Vulkan to PNG,
   WASAPI loopback audio, and our own GDB-protocol memory dumper, each writing a manifest.
-  Reuse SUGC's lab scripts.
+  Copy SUGC's lab scripts if reachable; otherwise rebuild them in this shape.
 - **Reference frames must key on an exact frame number or a savestate**, never a
   wall-clock wait (verified on SUGC: same wait, different frames). **Inference:** this
   matters even more for a 3D game with streaming, physics and particles; plan for
@@ -101,7 +112,7 @@ My understanding, all of it **inference** until you confirm it:
 Work in phases; finish each phase's verification against RPCS3 before the next. Before each
 phase, state the plan, what "done" means, and how you will verify it.
 
-0. **Lab**: extract, decrypt, inventory, Ghidra, capture scripts (reuse SUGC's). Settle:
+0. **Lab**: extract, decrypt, inventory, Ghidra, capture scripts (see Lab setup). Settle:
    number of executables/modules, SPU program count and kinds, the main archive formats,
    scripting data format, and how well Ghidra handles this executable.
 1. **Data**: archive and asset formats (streaming packages, textures, meshes, animation,
@@ -110,8 +121,8 @@ phase, state the plan, what "done" means, and how you will verify it.
 2. **Ground truth**: deterministic captures from savestates with recorded input: frames,
    audio, RSX command streams, and SPU job inputs/outputs.
 3. **PPU**: static recompilation to native code, OS and library calls routed to our own
-   runtime. Untested on SUGC when this was written; check LESSONS.md for what that trial
-   learned. Milestone: main menu.
+   runtime. Untested on SUGC when this was written; if the trial repo is reachable, check
+   its `docs/LESSONS.md` for what it learned. Milestone: main menu.
 4. **SPU**: rewrite each SPU job on the CPU, one at a time, each diffed against captured
    job inputs/outputs, then optimise. **Inference:** this is the largest phase here, unlike
    SUGC, and ordering it by what the main menu and first level need is what keeps it
@@ -131,6 +142,8 @@ memory or endianness, and tell me when you use it.
   with "unknown" never merged into "negative"), and a `docs/LESSONS.md` log like SUGC's.
 - Be honest about uncertainty. Don't give time estimates; tell me you'll notify me when a
   run finishes or needs me, and what would stop it.
+- Speak English only. I often leave the PC on overnight, so batch everything you need
+  from me into one message before I go. My local time is roughly UTC-7.
 - Start with Phase 0: list what you need from me, what you'll check about the tooling
   first, and the repo layout.
 

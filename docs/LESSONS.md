@@ -10,6 +10,13 @@ learned, and how to apply it. Tag each one **[carries]** if it should apply to a
 port, **[SUGC]** if it is specific to this game, or **[check]** if we expect it to differ
 on the next game and it must be re-verified there.
 
+## Scope
+
+- **2026-10-06:** Ez narrowed the trial to **Sonic 1 end to end**. Its purpose is to test
+  whether rewriting an RPCS3 game natively in Rust works at all, not to port the whole
+  collection. Uncharted 2 will start in a separate project with none of this context, so
+  NEXT_GAME_PROMPT.md must stand on its own.
+
 ## Worked
 
 ### Lab and workflow
