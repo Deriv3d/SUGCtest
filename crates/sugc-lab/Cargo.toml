@@ -8,3 +8,4 @@ publish.workspace = true
 
 [dependencies]
 sugc-formats = { path = "../sugc-formats" }
+png = "0.18"

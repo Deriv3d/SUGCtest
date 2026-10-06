@@ -17,8 +17,13 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
   - memory: own GDB-protocol client dumps program segments and heap.
 - Ghidra agrees with RPCS3 at runtime (C-008).
 - `crates/sugc-formats`: FPG archive parser and writer (no unsafe; tests on synthetic archives).
-- `crates/sugc-lab`: `roundtrip <file>` and `extract <archive> <outdir>` (refuses to write
-  inside the repo).
+- `crates/sugc-formats`: SPR container parser and writer; GCM texture descriptors, `TEXL` texture
+  streams, and DXT1/3/5 + ARGB8 (linear and swizzled) decoding to RGBA.
+- `crates/sugc-lab`: `roundtrip <file>` (FPG or SPR), `extract <archive> <outdir>` and
+  `spr-textures <spr> <outdir>` (both refuse to write inside the repo).
+- Round trip on the owner's disc, 2026-10-06: `ui.spr` **PASS** (4 streams), `global_binary.spr`
+  **PASS** (2 streams), both byte-identical. 232 of 234 UI textures decode (2 are G8B8, not yet
+  supported).
 - Round trip on the owner's disc, 2026-10-06: `flog_u.fpg` **PASS** (147 entries,
   byte-identical, 147/147 inflate), `flog_c.fpg` **PASS** (12 entries, byte-identical,
   12/12 inflate).

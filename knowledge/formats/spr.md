@@ -1,7 +1,7 @@
 # SPR stream container (`streams/ui.spr`, `streams/global_binary.spr`)
 
-Status: **partial**. The compression layer and the stream roles are understood. The scene-graph
-record layout is not yet.
+Status: **partial**. The compression layer, the stream roles and the texture data are understood, and
+`sugc-formats` round-trips both files and decodes their textures. The scene-graph record layout is not yet.
 
 ## Compression layer
 
@@ -44,12 +44,48 @@ All of them point into GPU local memory between 0x0B000000 and 0x0F8B0000. Those
 
 Structure streams hold many absolute addresses in the 0x80000000 range (about 1.4–2% of their words). That fits a memory image built to load at a fixed heap address.
 
+## Texture data streams
+
+A texture-data stream is a run of blocks, one per texture, **in the same order as the descriptors** in the
+paired structure stream:
+- a 16-byte block header: ASCII `TEXL` followed by 12 zero bytes;
+- then the texture's full mip chain, top level first, padded with zeros to a 16-byte boundary.
+
+This accounts for every byte of all three texture streams: 230 + 2 + 2 blocks. The "3,740 spare bytes" above
+are the 230 block headers plus padding.
+
+The record holding each descriptor starts 32 bytes before it. That prefix contains the texture's GPU address
+(0xC0000000 + descriptor offset) and its total data size, which is how `texture::find_textures` validates a
+candidate descriptor.
+
+**Pixel layout:**
+- **DXT1/3/5 blocks** use the usual little-endian colour words, as on PC.
+- **Uncompressed A8R8G8B8 textures** are stored in A, R, G, B byte order.
+  - When the descriptor's linear flag is clear, texels are in Morton (swizzled) order.
+  - Every linear texture on the disc has a non-power-of-two size; every swizzled one is a power of two.
+
+**Evidence the decode is right**, without looking at the art:
+- **Swizzling:** all 16 swizzled ARGB textures of 8×8 or more come out smoother (lower neighbour-pixel
+  difference) when deswizzled than when read linearly.
+- **Colour byte order:** for 180 of 189 DXT textures of 32×32 or more, block colours are smoother read as
+  little-endian. The 9 exceptions are DXT5 textures, probably mostly-flat colour with detail in alpha.
+
+The owner still needs to confirm that a few decoded textures match the game; see Verification.
+
+## Round trip and decode on the owner's disc (2026-10-06)
+- `sugc-lab roundtrip`: `ui.spr` **PASS** (4 streams, byte-identical, 4/4 inflate); `global_binary.spr`
+  **PASS** (2 streams, byte-identical, 2/2 inflate).
+- `sugc-lab spr-textures`: 232 of 234 textures decoded to PNG in the lab. The other 2 are G8B8
+  (two-channel) textures, whose decoding isn't implemented yet.
+
+## Verification
+- Pending: the owner compares a few decoded textures with the game's menus. Later: a RenderDoc capture of
+  the menu, compared texture-for-texture.
+
 ## Open questions
 - **Header page.** Its first word of each per-stream record (2, 6, 18, 111 in `ui.spr`) has no known meaning yet.
-- **Texture order.** The order of textures inside the texture-data stream (descriptor order vs. GPU-offset order), and what the 3,740 spare bytes are.
 - **Fix-up.** How pointers are fixed up if the heap base differs. Settling check: the loader near 0x0003f7e0 / 0x0003fa10, and a GDB dump of the UI after load.
 
 ## Next steps
-1. Parser and writer in `sugc-formats` with a round-trip, as for FPG.
-2. Decode the 230 textures to RGBA, then compare one with a RenderDoc capture of the menu that uses it.
-3. Map the scene-graph records (element names, positions, texture references) for the viewer.
+1. G8B8 decode, and what the two-channel textures are used for.
+2. Map the scene-graph records (element names, positions, texture references) for the viewer.
