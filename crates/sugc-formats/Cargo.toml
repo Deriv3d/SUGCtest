@@ -1,0 +1,11 @@
+[package]
+name = "sugc-formats"
+version = "0.1.0"
+description = "Parsers and writers for the file formats on the user's own game disc."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+crc32fast = "1"
+flate2 = "1"
