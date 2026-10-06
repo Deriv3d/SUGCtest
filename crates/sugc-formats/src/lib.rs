@@ -6,5 +6,6 @@
 #![forbid(unsafe_code)]
 
 pub mod fpg;
+pub mod msf;
 pub mod spr;
 pub mod texture;

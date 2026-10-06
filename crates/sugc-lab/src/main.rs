@@ -5,6 +5,7 @@
 //! sugc-lab roundtrip <file>              FPG or SPR: parse, re-serialize, byte-compare; PASS/FAIL
 //! sugc-lab extract <archive> <outdir>    inflate every FPG entry into <outdir>
 //! sugc-lab spr-textures <spr> <outdir>   decode every SPR texture to PNG in <outdir>
+//! sugc-lab msf-wav <msf> <out.wav>       decode an MSF music stream to a 16-bit WAV
 //! ```
 //!
 //! Output directories must be outside the repository.
@@ -15,6 +16,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use sugc_formats::fpg::{self, Archive};
+use sugc_formats::msf::{self, Msf};
 use sugc_formats::spr::Container;
 use sugc_formats::texture;
 
@@ -29,9 +31,10 @@ fn main() -> ExitCode {
         ["roundtrip", file] => roundtrip(Path::new(file)),
         ["extract", archive, outdir] => extract(Path::new(archive), Path::new(outdir)),
         ["spr-textures", file, outdir] => spr_textures(Path::new(file), Path::new(outdir)),
+        ["msf-wav", file, out] => msf_wav(Path::new(file), Path::new(out)),
         _ => Err(
             "usage: sugc-lab roundtrip <file> | extract <archive> <outdir> | \
-                  spr-textures <spr> <outdir>"
+                  spr-textures <spr> <outdir> | msf-wav <msf> <out.wav>"
                 .into(),
         ),
     };
@@ -59,6 +62,10 @@ fn roundtrip(file: &Path) -> Result<bool, String> {
                 .map(|(i, e)| e.decompress(i).map(drop)),
         );
         ("entries", archive.to_bytes(), archive.entries.len(), ok)
+    } else if bytes.starts_with(&msf::MAGIC) {
+        let m = Msf::parse(&bytes).map_err(|e| e.to_string())?;
+        let ok = count_ok(std::iter::once(m.decode_pcm().map(drop)));
+        ("audio streams", m.to_bytes(), 1, ok)
     } else {
         let c = Container::parse(&bytes).map_err(|e| e.to_string())?;
         let ok = count_ok(
@@ -153,6 +160,58 @@ fn write_png(path: &Path, w: u32, h: u32, rgba: &[u8]) -> Result<(), String> {
     enc.set_depth(png::BitDepth::Eight);
     let mut writer = enc.write_header().map_err(|e| e.to_string())?;
     writer.write_image_data(rgba).map_err(|e| e.to_string())
+}
+
+/// Decode an MSF file to a 16-bit PCM WAV (outside the repo).
+fn msf_wav(file: &Path, out: &Path) -> Result<bool, String> {
+    refuse_repo_path(out)?;
+    let bytes = std::fs::read(file).map_err(|e| format!("{}: {e}", file.display()))?;
+    let m = Msf::parse(&bytes).map_err(|e| e.to_string())?;
+    let pcm = m.decode_pcm().map_err(|e| e.to_string())?;
+    if let Some(dir) = out.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(
+        out,
+        wav_bytes(&pcm, m.channels.max(1) as u16, m.sample_rate),
+    )
+    .map_err(|e| format!("{}: {e}", out.display()))?;
+    let frames = pcm.len() / m.channels.max(1) as usize;
+    println!(
+        "{}: {:?}, {} ch, {} Hz, {} frames ({:.1} s), loop {}+{} -> {}",
+        file.display(),
+        m.codec,
+        m.channels,
+        m.sample_rate,
+        frames,
+        frames as f64 / f64::from(m.sample_rate.max(1)),
+        m.loop_start,
+        m.loop_length,
+        out.display()
+    );
+    Ok(true)
+}
+
+/// A minimal 16-bit PCM WAV file.
+fn wav_bytes(pcm: &[i16], channels: u16, rate: u32) -> Vec<u8> {
+    let data_len = (pcm.len() * 2) as u32;
+    let mut b = Vec::with_capacity(44 + pcm.len() * 2);
+    b.extend_from_slice(b"RIFF");
+    b.extend_from_slice(&(36 + data_len).to_le_bytes());
+    b.extend_from_slice(b"WAVEfmt ");
+    b.extend_from_slice(&16u32.to_le_bytes());
+    b.extend_from_slice(&1u16.to_le_bytes());
+    b.extend_from_slice(&channels.to_le_bytes());
+    b.extend_from_slice(&rate.to_le_bytes());
+    b.extend_from_slice(&(rate * u32::from(channels) * 2).to_le_bytes());
+    b.extend_from_slice(&(channels * 2).to_le_bytes());
+    b.extend_from_slice(&16u16.to_le_bytes());
+    b.extend_from_slice(b"data");
+    b.extend_from_slice(&data_len.to_le_bytes());
+    for s in pcm {
+        b.extend_from_slice(&s.to_le_bytes());
+    }
+    b
 }
 
 fn first_diff(a: &[u8], b: &[u8]) -> &'static str {

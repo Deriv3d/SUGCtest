@@ -22,8 +22,7 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - `crates/sugc-lab`: `roundtrip <file>` (FPG or SPR), `extract <archive> <outdir>` and
   `spr-textures <spr> <outdir>` (both refuse to write inside the repo).
 - Round trip on the owner's disc, 2026-10-06: `ui.spr` **PASS** (4 streams), `global_binary.spr`
-  **PASS** (2 streams), both byte-identical. 232 of 234 UI textures decode (2 are G8B8, not yet
-  supported).
+  **PASS** (2 streams), both byte-identical. All 234 UI textures decode, including the G8B8 font atlas.
 - Round trip on the owner's disc, 2026-10-06: `flog_u.fpg` **PASS** (147 entries,
   byte-identical, 147/147 inflate), `flog_c.fpg` **PASS** (12 entries, byte-identical,
   12/12 inflate).
@@ -39,6 +38,8 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - FPG archive format and the archive-to-emulator path:
   [../knowledge/formats/fpg.md](../knowledge/formats/fpg.md) (C-011 to C-014).
 - 38 of 40 bundled Genesis ROMs pass their internal header checksum (C-015).
+- `flog_c.fpg`'s 9 binaries are localized string tables, not fonts (C-018).
+- Music: one MSF file, PlayStation ADPCM; parser round-trips and decodes (C-019).
 - ROM in RPCS3 guest memory is byte-identical to our extracted image (C-013). The core's only
   change is a hook marker in its instruction-fetch copy (break slots, C-016; 39 of 40 games).
 
@@ -46,7 +47,9 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 - What the game's SPU task does, and when it runs.
 - Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
-- `streams/*.spr` scene-graph record layout (compression layer and stream roles done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MSF audio header, MP4 codec parameters.
+- Font glyph metrics; names of the 9 string tables.
+- `streams/*.spr` scene-graph record layout (compression layer and stream roles done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MP4 codec parameters.
+- MSF decode needs an owner listening check (C-019).
 - Where the archive's little-endian table is byte-swapped after load.
 - What the per-game break-slot callbacks do (C-016).
 - Ghidra SPU route (C-004).
