@@ -35,8 +35,8 @@ yet analysed.
 | `PS3_GAME/USRDIR/fmv/main0001.mp4` | 29,477,384 | MP4 (`mp42`) | as above | partial |
 | `PS3_GAME/USRDIR/fmv/sgc2_attract.mp4` | 22,642,190 | MP4 (`mp42`) | as above | partial |
 | `PS3_GAME/USRDIR/sounds/music/retro_dreams.msf` | 2,411,904 | Sony MSF stream (`MSFC` magic) | `sounds/music` at 0x000eabf8, `.msf` at 0x000ee918, then the generic file layer 0x00056b70 | partial |
-| `PS3_GAME/USRDIR/streams/ui.spr` | 12,722,176 | game-specific container, no ASCII magic | `Streams\ui.spr` at 0x0003fa10; path builder 0x0003f7e0 | unknown |
-| `PS3_GAME/USRDIR/streams/global_binary.spr` | 200,704 | game-specific container, no ASCII magic (same family as `ui.spr`) | path builder 0x0003f7e0 (`%s%s.%s`) | unknown |
+| `PS3_GAME/USRDIR/streams/ui.spr` | 12,722,176 | SPR stream container ([spr.md](spr.md)): chunked zlib, 4 streams | `Streams\ui.spr` at 0x0003fa10; path builder 0x0003f7e0 | partial |
+| `PS3_GAME/USRDIR/streams/global_binary.spr` | 200,704 | SPR stream container ([spr.md](spr.md)): chunked zlib, 2 streams | path builder 0x0003f7e0 (`%s%s.%s`) | partial |
 | `PS3_UPDATE/PS3UPDAT.PUP` | 268,435,456 | PS3 system update package (system) | firmware only | understood |
 
 ## The game's file layer

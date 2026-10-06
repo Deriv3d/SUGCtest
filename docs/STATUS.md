@@ -39,7 +39,7 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 - What the game's SPU task does, and when it runs.
 - Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
-- `streams/*.spr` container format (next), MSF audio header, MP4 codec parameters.
+- `streams/*.spr` contents (compression layer done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MSF audio header, MP4 codec parameters.
 - Where the archive's little-endian table is byte-swapped after load.
 - Ghidra SPU route (C-004).
 
