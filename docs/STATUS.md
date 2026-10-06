@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-06. Current phase: **0 (Lab)**, all but one item done. Plan: [PHASE0.md](PHASE0.md).
+Updated 2026-10-06. Current phase: **1 (Data)**, plan: [PHASE1.md](PHASE1.md). Phase 0 done except the RSX capture replay check ([PHASE0.md](PHASE0.md)).
 Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 ## Works
