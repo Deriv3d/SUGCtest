@@ -64,7 +64,11 @@ fn main() -> ExitCode {
         }
     }
 
-    let files = if staged { staged_files(&root) } else { walk(&root) };
+    let files = if staged {
+        staged_files(&root)
+    } else {
+        walk(&root)
+    };
     let game_index = game_dir.as_deref().map(index_game_dir);
     let mut fails = Vec::new();
     for rel in &files {
@@ -82,16 +86,28 @@ fn main() -> ExitCode {
         files.len(),
         fails.len()
     );
-    if fails.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if fails.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn check_file(rel: &str, data: &[u8], game: Option<&GameIndex>, out: &mut Vec<Finding>) {
-    let mut fail = |why: String| out.push(Finding { path: rel.to_string(), why });
+    let mut fail = |why: String| {
+        out.push(Finding {
+            path: rel.to_string(),
+            why,
+        })
+    };
     let ext = Path::new(rel)
         .extension()
         .map(|e| e.to_string_lossy().to_ascii_lowercase())
         .unwrap_or_default();
-    let name = Path::new(rel).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let name = Path::new(rel)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
 
     if BANNED_EXT.contains(&ext.as_str()) {
         fail(format!("banned extension .{ext}"));
@@ -102,16 +118,17 @@ fn check_file(rel: &str, data: &[u8], game: Option<&GameIndex>, out: &mut Vec<Fi
     if let Some(why) = sniff_magic(data) {
         fail(why);
     }
-    if let Some(game) = game {
-        if let Some(src) = game.matches(data) {
-            fail(format!("content matches extracted game data ({src})"));
-        }
+    if let Some(src) = game.and_then(|g| g.matches(data)) {
+        fail(format!("content matches extracted game data ({src})"));
     }
 
     let is_text = TEXT_EXT.contains(&ext.as_str()) || std::str::from_utf8(data).is_ok();
     if !is_text {
         if !BINARY_ALLOW_PREFIX.iter().any(|p| rel.starts_with(p)) {
-            fail(format!("binary file outside the allowlist ({} bytes)", data.len()));
+            fail(format!(
+                "binary file outside the allowlist ({} bytes)",
+                data.len()
+            ));
         }
         return;
     }
@@ -145,7 +162,9 @@ fn sniff_magic(d: &[u8]) -> Option<String> {
     if at(0, b"\x7fELF") && d.len() > 0x13 && d[5] == 2 {
         let machine = u16::from_be_bytes([d[0x12], d[0x13]]);
         if machine == 0x15 || machine == 0x17 {
-            return Some(format!("big-endian ELF for PPU/SPU (e_machine {machine:#x})"));
+            return Some(format!(
+                "big-endian ELF for PPU/SPU (e_machine {machine:#x})"
+            ));
         }
     }
     // Mega Drive / Genesis cartridge header: system type at 0x100.
@@ -184,7 +203,11 @@ fn text_rules() -> Vec<(&'static str, Regex)> {
 }
 
 fn truncate(s: &str, n: usize) -> String {
-    if s.len() <= n { s.to_string() } else { format!("{}...", &s[..n]) }
+    if s.len() <= n {
+        s.to_string()
+    } else {
+        format!("{}...", &s[..n])
+    }
 }
 
 /// Hashes of the locally extracted game files, whole-file and in 4 KiB blocks, so a
@@ -202,23 +225,30 @@ impl GameIndex {
             return Some(src.clone());
         }
         // Aligned 4 KiB blocks; skip blocks that are all one byte value (padding).
-        data.chunks_exact(BLOCK)
+        data.as_chunks::<BLOCK>()
+            .0
+            .iter()
             .filter(|c| c.iter().any(|&b| b != c[0]))
-            .find(|c| self.blocks.contains(&sha(c)))
+            .find(|c| self.blocks.contains(&sha(&c[..])))
             .map(|_| "a 4 KiB block of an extracted file".into())
     }
 }
 
 fn index_game_dir(dir: &Path) -> GameIndex {
-    let mut idx = GameIndex { whole: HashMap::new(), blocks: HashSet::new() };
+    let mut idx = GameIndex {
+        whole: HashMap::new(),
+        blocks: HashSet::new(),
+    };
     for rel in walk(dir) {
-        let Ok(mut f) = fs::File::open(dir.join(&rel)) else { continue };
+        let Ok(mut f) = fs::File::open(dir.join(&rel)) else {
+            continue;
+        };
         let mut data = Vec::new();
         if f.read_to_end(&mut data).is_err() {
             continue;
         }
         idx.whole.insert(sha(&data), rel.clone());
-        for c in data.chunks_exact(BLOCK) {
+        for c in data.as_chunks::<BLOCK>().0 {
             if c.iter().any(|&b| b != c[0]) {
                 idx.blocks.insert(sha(c));
             }
@@ -258,7 +288,10 @@ fn staged_files(root: &Path) -> Vec<String> {
         .current_dir(root)
         .output()
         .expect("git not available");
-    String::from_utf8_lossy(&out.stdout).lines().map(str::to_string).collect()
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(str::to_string)
+        .collect()
 }
 
 #[cfg(test)]
@@ -285,7 +318,11 @@ mod tests {
 
     #[test]
     fn rejects_banned_extension() {
-        assert!(fails("x/game.gen", b"hello").iter().any(|w| w.contains("banned extension")));
+        assert!(
+            fails("x/game.gen", b"hello")
+                .iter()
+                .any(|w| w.contains("banned extension"))
+        );
     }
 
     #[test]
@@ -310,13 +347,22 @@ mod tests {
 
     #[test]
     fn accepts_plain_source() {
-        assert!(fails("src/lib.rs", b"pub fn add(a: u32, b: u32) -> u32 { a + b }\n").is_empty());
+        assert!(
+            fails(
+                "src/lib.rs",
+                b"pub fn add(a: u32, b: u32) -> u32 { a + b }\n"
+            )
+            .is_empty()
+        );
     }
 
     #[test]
     fn game_index_catches_partial_copy() {
         let block: Vec<u8> = (0..BLOCK).map(|i| (i * 7 % 251) as u8).collect();
-        let mut idx = GameIndex { whole: HashMap::new(), blocks: HashSet::new() };
+        let mut idx = GameIndex {
+            whole: HashMap::new(),
+            blocks: HashSet::new(),
+        };
         idx.blocks.insert(sha(&block));
         let mut v = Vec::new();
         check_file("assets/own/pic.png", &block, Some(&idx), &mut v);

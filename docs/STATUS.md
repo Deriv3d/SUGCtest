@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-06. Current phase: **1 (Data)**, plan: [PHASE1.md](PHASE1.md). Phase 0 done except the RSX capture replay check ([PHASE0.md](PHASE0.md)).
+Updated 2026-10-06. Current phase: **1 (Data)**, plan: [PHASE1.md](PHASE1.md). Phase 0 done; the RSX capture was made by hand but RPCS3 0.0.43 cannot replay it (C-010).
 Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 ## Works
@@ -16,6 +16,12 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
   - audio: WASAPI loopback, 48 kHz stereo, matches RPCS3's reported output.
   - memory: own GDB-protocol client dumps program segments and heap.
 - Ghidra agrees with RPCS3 at runtime (C-008).
+- `crates/sugc-formats`: FPG archive parser and writer (no unsafe; tests on synthetic archives).
+- `crates/sugc-lab`: `roundtrip <file>` and `extract <archive> <outdir>` (refuses to write
+  inside the repo).
+- Round trip on the owner's disc, 2026-10-06: `flog_u.fpg` **PASS** (147 entries,
+  byte-identical, 147/147 inflate), `flog_c.fpg` **PASS** (12 entries, byte-identical,
+  12/12 inflate).
 
 ## Confirmed findings
 
@@ -24,16 +30,22 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
   library's own SPURS instance (C-005). Port impact: one small SPU task to reimplement,
   and an ordinary video decoder in place of the system one.
 - Frames are not reproducible by wall-clock wait (C-009).
+- All 27 disc files classified: [../knowledge/formats/INVENTORY.md](../knowledge/formats/INVENTORY.md).
+- FPG archive format and the archive-to-emulator path:
+  [../knowledge/formats/fpg.md](../knowledge/formats/fpg.md) (C-011 to C-014).
+- 38 of 40 bundled Genesis ROMs pass their internal header checksum (C-015).
 
 ## Unknown
 
 - What the game's SPU task does, and when it runs.
-- The archive's full format, the non-ROM entries, and how ROMs reach the emulator.
+- Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
+- `streams/*.spr` container format (next), MSF audio header, MP4 codec parameters.
+- Where the archive's little-endian table is byte-swapped after load.
 - Ghidra SPU route (C-004).
 
 ## Blocked on the owner
 
-- RSX capture must be made by hand from RPCS3's menu (C-010).
+- Nothing at the moment. (RSX captures must be made by hand from RPCS3's menu, C-010.)
 
 ## Known tool quirks
 
