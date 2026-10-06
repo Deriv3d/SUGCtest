@@ -1,37 +1,44 @@
 # Status
 
-Updated 2026-10-06. Current phase: **0 (Lab)**, partly done. Plan: [PHASE0.md](PHASE0.md).
+Updated 2026-10-06. Current phase: **0 (Lab)**, all but one item done. Plan: [PHASE0.md](PHASE0.md).
 Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 
 ## Works
 
 - Repo scaffold, CI, pre-commit hook, `publish-check` (7 tests on synthetic data).
-- Lab on the owner's PC (`C:\SUGC-LAB`): disc extracted and hashed (27 files), executable
-  decrypted reproducibly with RPCS3 `--decrypt`, Java 21 + Ghidra 12.1.3 installed portably.
-- ghidra-mcp headless server running with the analysed executable loaded. Ps3GhidraScripts
-  builds for 12.1.3 and names all 250 imports. Decompilation looks healthy (claim C-003).
-- RPCS3 boots the game with `--no-gui` and writes a usable log.
+- Lab on the owner's PC (`C:\SUGC-LAB`): disc extracted and hashed, executable decrypted
+  reproducibly with RPCS3 `--decrypt`, Java 21, Ghidra 12.1.3 and RenderDoc 1.46 installed
+  portably. Lab runs use a separate RPCS3 config; the owner's config is untouched.
+- ghidra-mcp headless server with the analysed executable; all 250 imports named.
+- Lab scripts (on the owner's PC, `C:\SUGC-LAB\scripts`), each capture with a manifest:
+  - launch: `--no-gui` boot, log collection, clean shutdown via RPCS3's GDB server.
+  - frame: RenderDoc in-app API capture, exported to PNG (1280x720).
+  - audio: WASAPI loopback, 48 kHz stereo, matches RPCS3's reported output.
+  - memory: own GDB-protocol client dumps program segments and heap.
+- Ghidra agrees with RPCS3 at runtime (C-008).
 
 ## Confirmed findings
 
-- One PPU executable, no PRX modules on disc. Genesis and Master System/Game Gear ROMs
-  live in one zlib-packed archive (C-001).
-- The game uses the SPU: one embedded SPU program, SPURS, 5 SPU thread groups (C-005).
+- One PPU executable; ROMs in one zlib-packed archive (C-001).
+- SPU: one SPURS taskset task owned by the game; FMV playback uses the system video
+  library's own SPURS instance (C-005). Port impact: one small SPU task to reimplement,
+  and an ordinary video decoder in place of the system one.
+- Frames are not reproducible by wall-clock wait (C-009).
 
 ## Unknown
 
-- What the SPU program does (audio mixing, filters, decompression, something else).
+- What the game's SPU task does, and when it runs.
 - The archive's full format, the non-ROM entries, and how ROMs reach the emulator.
-- Which Ghidra SPU route to use (no maintained module found, C-004).
+- Ghidra SPU route (C-004).
 
-## Not done yet in Phase 0
+## Blocked on the owner
 
-- Capture scripts: RenderDoc frame, RPCS3 RSX capture, audio loopback, memory dump.
-  RenderDoc is not installed yet.
-- Verification: compare Ghidra's view of a few import stubs with RPCS3's PPU debugger;
-  repeatability of the title-screen frame.
+- RSX capture must be made by hand from RPCS3's menu (C-010).
 
 ## Known tool quirks
 
-- ghidra-mcp headless: the program has to be loaded through its API; the README's
-  `list_functions` endpoint returned 404.
+- ghidra-mcp headless: load the program through its API; README `list_functions` 404s.
+- RPCS3 `--no-gui`: closing the window does not stop it; use the GDB server's kill.
+- RPCS3 GDB server: one connection per boot; breakpoints need the PPU interpreter;
+  "start paused" is ignored for CLI boots, so the entry point can't be broken on.
+- The owner's machine blocks synthetic keystrokes and closing processes it didn't start.
