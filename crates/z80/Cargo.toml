@@ -1,0 +1,12 @@
+[package]
+name = "z80"
+version = "0.1.0"
+description = "Zilog Z80 CPU interpreter with T-state timing (game-agnostic)."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+serde_json = "1"
