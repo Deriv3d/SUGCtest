@@ -1,0 +1,10 @@
+[package]
+name = "sugc-lab"
+version = "0.1.0"
+description = "Lab CLI: round-trip and extract the user's own disc files into a lab folder outside the repo."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sugc-formats = { path = "../sugc-formats" }

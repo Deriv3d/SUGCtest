@@ -118,9 +118,7 @@ fn check_file(rel: &str, data: &[u8], game: Option<&GameIndex>, out: &mut Vec<Fi
     if let Some(why) = sniff_magic(data) {
         fail(why);
     }
-    if let Some(game) = game
-        && let Some(src) = game.matches(data)
-    {
+    if let Some(src) = game.and_then(|g| g.matches(data)) {
         fail(format!("content matches extracted game data ({src})"));
     }
 
@@ -231,7 +229,7 @@ impl GameIndex {
             .0
             .iter()
             .filter(|c| c.iter().any(|&b| b != c[0]))
-            .find(|c| self.blocks.contains(&sha(*c)))
+            .find(|c| self.blocks.contains(&sha(&c[..])))
             .map(|_| "a 4 KiB block of an extracted file".into())
     }
 }

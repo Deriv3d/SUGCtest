@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["tools/publish-check"]
+members = ["crates/sugc-formats", "crates/sugc-lab", "tools/publish-check"]
 
 [workspace.package]
 edition = "2024"
