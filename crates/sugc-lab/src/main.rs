@@ -2,16 +2,21 @@
 //! outside this repository.
 //!
 //! ```text
-//! sugc-lab roundtrip <file>            parse, re-serialize, byte-compare; prints PASS/FAIL
-//! sugc-lab extract <archive> <outdir>  inflate every entry into <outdir> (must be outside the repo)
+//! sugc-lab roundtrip <file>              FPG or SPR: parse, re-serialize, byte-compare; PASS/FAIL
+//! sugc-lab extract <archive> <outdir>    inflate every FPG entry into <outdir>
+//! sugc-lab spr-textures <spr> <outdir>   decode every SPR texture to PNG in <outdir>
 //! ```
+//!
+//! Output directories must be outside the repository.
 
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use sugc_formats::fpg::Archive;
+use sugc_formats::fpg::{self, Archive};
+use sugc_formats::spr::Container;
+use sugc_formats::texture;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -23,7 +28,12 @@ fn main() -> ExitCode {
     {
         ["roundtrip", file] => roundtrip(Path::new(file)),
         ["extract", archive, outdir] => extract(Path::new(archive), Path::new(outdir)),
-        _ => Err("usage: sugc-lab roundtrip <file> | sugc-lab extract <archive> <outdir>".into()),
+        ["spr-textures", file, outdir] => spr_textures(Path::new(file), Path::new(outdir)),
+        _ => Err(
+            "usage: sugc-lab roundtrip <file> | extract <archive> <outdir> | \
+                  spr-textures <spr> <outdir>"
+                .into(),
+        ),
     };
     match result {
         Ok(true) => ExitCode::SUCCESS,
@@ -35,23 +45,34 @@ fn main() -> ExitCode {
     }
 }
 
-/// Parse, re-serialize and byte-compare; also inflate every entry and check its size.
+/// Parse, re-serialize and byte-compare; also inflate every entry/stream and check sizes.
+/// The format is detected from the file: FPG by its magic, otherwise SPR.
 fn roundtrip(file: &Path) -> Result<bool, String> {
     let bytes = std::fs::read(file).map_err(|e| format!("{}: {e}", file.display()))?;
-    let archive = Archive::parse(&bytes).map_err(|e| e.to_string())?;
-    let rebuilt = archive.to_bytes();
+    let (kind, rebuilt, n, inflate_ok) = if bytes.starts_with(&fpg::MAGIC) {
+        let archive = Archive::parse(&bytes).map_err(|e| e.to_string())?;
+        let ok = count_ok(
+            archive
+                .entries
+                .iter()
+                .enumerate()
+                .map(|(i, e)| e.decompress(i).map(drop)),
+        );
+        ("entries", archive.to_bytes(), archive.entries.len(), ok)
+    } else {
+        let c = Container::parse(&bytes).map_err(|e| e.to_string())?;
+        let ok = count_ok(
+            c.streams
+                .iter()
+                .enumerate()
+                .map(|(i, s)| s.decompress(i).map(drop)),
+        );
+        ("streams", c.to_bytes(), c.streams.len(), ok)
+    };
     let identical = rebuilt == bytes;
-    let mut inflate_ok = 0usize;
-    for (i, e) in archive.entries.iter().enumerate() {
-        match e.decompress(i) {
-            Ok(_) => inflate_ok += 1,
-            Err(err) => eprintln!("  {err}"),
-        }
-    }
-    let n = archive.entries.len();
     let pass = identical && inflate_ok == n;
     println!(
-        "{}: {} | entries {n} | re-serialized {} bytes vs {} original, {} | inflate ok {inflate_ok}/{n}",
+        "{}: {} | {kind} {n} | re-serialized {} bytes vs {} original, {} | inflate ok {inflate_ok}/{n}",
         file.display(),
         if pass { "PASS" } else { "FAIL" },
         rebuilt.len(),
@@ -63,6 +84,75 @@ fn roundtrip(file: &Path) -> Result<bool, String> {
         },
     );
     Ok(pass)
+}
+
+fn count_ok<E: std::fmt::Display>(results: impl Iterator<Item = Result<(), E>>) -> usize {
+    results
+        .filter(|r| match r {
+            Ok(()) => true,
+            Err(err) => {
+                eprintln!("  {err}");
+                false
+            }
+        })
+        .count()
+}
+
+/// Decode every texture in an SPR container to `<outdir>/<file>_s<stream>_<index>.png`.
+/// Structure stream N is paired with texture-data stream N+1.
+fn spr_textures(file: &Path, outdir: &Path) -> Result<bool, String> {
+    refuse_repo_path(outdir)?;
+    let bytes = std::fs::read(file).map_err(|e| format!("{}: {e}", file.display()))?;
+    let c = Container::parse(&bytes).map_err(|e| e.to_string())?;
+    let streams: Vec<Vec<u8>> = c
+        .streams
+        .iter()
+        .enumerate()
+        .map(|(i, s)| s.decompress(i))
+        .collect::<Result<_, _>>()
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(outdir).map_err(|e| format!("{}: {e}", outdir.display()))?;
+    let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("spr");
+    let (mut total, mut ok) = (0usize, 0usize);
+    for pair in 0..streams.len().saturating_sub(1) {
+        let found = texture::find_textures(&streams[pair]);
+        let textures: Vec<_> = found.iter().map(|(_, t)| *t).collect();
+        let Ok(parts) = texture::split_texture_data(&streams[pair + 1], &textures) else {
+            continue;
+        };
+        for (i, (t, data)) in textures.iter().zip(parts).enumerate() {
+            total += 1;
+            match texture::decode_rgba(t, data) {
+                Ok(rgba) => {
+                    let path = outdir.join(format!("{stem}_s{pair}_{i:03}.png"));
+                    write_png(&path, u32::from(t.width), u32::from(t.height), &rgba)?;
+                    ok += 1;
+                }
+                Err(e) => eprintln!("  s{pair} texture {i}: {e}"),
+            }
+        }
+        println!(
+            "{}: stream {pair}: {} textures paired with stream {}",
+            file.display(),
+            textures.len(),
+            pair + 1
+        );
+    }
+    println!(
+        "{}: decoded {ok}/{total} textures to {}",
+        file.display(),
+        outdir.display()
+    );
+    Ok(total > 0 && ok == total)
+}
+
+fn write_png(path: &Path, w: u32, h: u32, rgba: &[u8]) -> Result<(), String> {
+    let f = std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut enc = png::Encoder::new(std::io::BufWriter::new(f), w, h);
+    enc.set_color(png::ColorType::Rgba);
+    enc.set_depth(png::BitDepth::Eight);
+    let mut writer = enc.write_header().map_err(|e| e.to_string())?;
+    writer.write_image_data(rgba).map_err(|e| e.to_string())
 }
 
 fn first_diff(a: &[u8], b: &[u8]) -> &'static str {
