@@ -16,7 +16,7 @@ Single-player and offline only. Nothing here bypasses DRM, anti-cheat, or online
 
 | Path | What |
 | --- | --- |
-| `crates/` | Our Rust crates (formats, runtime, Genesis core, renderer, audio). Added phase by phase. |
+| `crates/` | Our Rust crates: `sugc-formats` (disc formats), `sugc-lab` (lab CLI), `asset-browser` (game-agnostic viewer UI), `sugc-viewer` (viewer for the user's own disc). More are added phase by phase. |
 | `tools/publish-check/` | CI and pre-commit lint that refuses game-derived files and anything that looks like a ROM, SELF/ELF, ISO, SFO or key. |
 | `lab-scripts/` | Scripts for the local lab (RPCS3, Ghidra, RenderDoc captures). They read and write the lab folder, never the repo. |
 | `docs/STATUS.md` | What works, what is unknown, what is blocked. |

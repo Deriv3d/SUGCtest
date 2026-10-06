@@ -86,10 +86,68 @@ The owner has confirmed that decoded textures match the game (see Verification).
   all look right: real menu, box and border art, with no scrambling or colour swaps.
 - Later: a texture-for-texture comparison with a RenderDoc capture of the menu.
 
+## Scene-graph objects (structure streams)
+
+Partial. Evidence: lab scripts `inventory\spr_*.py`, plus the GDB heap dump from the ROM memory check.
+
+**Load addresses.** At runtime the structure streams sit at fixed heap addresses:
+
+| Stream | Address |
+| --- | --- |
+| `global_binary.spr` stream 0 | 0x80200000 |
+| `ui.spr` stream 0 | 0x80400000 |
+| `ui.spr` stream 2 | 0x80500000 |
+
+They were found by matching file content against guest memory with the UI loaded. Most of each stream is
+unchanged in memory, so the file is close to an exact memory image. With those bases, almost all
+pointers stay inside their own stream:
+
+| Stream | Pointers inside it | Pointers into `global_binary` stream 0 | Pointers elsewhere |
+| --- | ---: | ---: | ---: |
+| `ui.spr` stream 2 | 6,995 | 21 | 1,789 |
+| `global_binary` stream 0 | 5,686 | — | 767 |
+
+**Object header.** `ui.spr` stream 2 holds 903 named objects, each starting on a 16-byte boundary:
+
+| Offset | Field |
+| ---: | --- |
+| +0 | class word: an address in the executable's uninitialized data, so probably a runtime class-registry entry; no static RTTI is available there |
+| +4 | **name hash = CRC-32 of the upper-cased name** (902 of 903). It's the same hash as the FPG archives. |
+| +8, +12 | not yet known |
+| +16 | the name, NUL-padded, in a 64- or 80-byte field |
+
+**Classes, by class word:**
+
+| Class word | Objects | Usual size (bytes) |
+| --- | ---: | --- |
+| 0x2B0B98 | about 400 | 528 (324 objects); some 592, 880 or 896 |
+| 0x2B0C18 | 274 | 5,616 (210 objects); some 1,360 or 1,232 |
+| 0x2B0EE8 | about 150 | 352 / 384; names suggest options, events and controller items |
+| 0x2B1218 | 35 | 384 |
+| 0x2B0B28 | a few | large; likely screens or containers |
+
+**Sprite elements (class 0x2B0B98, 528-byte form).** Field profile across all 324 objects:
+
+| Offset | Field |
+| ---: | --- |
+| +112, +116 | x, y as floats, in screen space (x from −16 to 1,106; y from −100 to 720; the screen is 1280×720) |
+| +120 | depth, as a float (0.8–40) |
+| +128, +132 | width, height, as floats (8–1,290 × 20–1,024) |
+| +136 | always 1.0 |
+| +144–+156 | RGBA tint as floats, mostly 1.0 |
+| +192–+252, +320–+328 | copies of the position/size/colour block; probably animation start or current state |
+| +344 | pointer, mostly to another sprite: probably a next-sibling link |
+| +356 | pointer to an earlier table |
+| +364, +368 | a second size pair (4–1,080 × 4–1,024); probably the source image size |
+
+**Texture records.** In 176 of 230 cases the texture path string (`ui\cart\…`, `ui\box\…` and so on) sits exactly 280 bytes before the texture's GPU descriptor. So a texture record is: a path field, other fields, then the 32-byte prefix and the descriptor. The path is not 16-byte aligned, so it's a field inside a larger object.
+
+**Not known yet:** how a sprite selects its texture. It isn't a pointer to the texture record, and it isn't a name hash; both were tested. That link is what's needed to rebuild a menu from the layout records.
+
 ## Open questions
 - **Header page.** Its first word of each per-stream record (2, 6, 18, 111 in `ui.spr`) has no known meaning yet.
 - **Fix-up.** How pointers are fixed up if the heap base differs. Settling check: the loader near 0x0003f7e0 / 0x0003fa10, and a GDB dump of the UI after load.
 
 ## Next steps
 1. Glyph metrics for the font atlas: not yet found in the structure streams.
-2. Map the scene-graph records (element names, positions, texture references) for the viewer.
+2. Find the sprite-to-texture link (likely through the 0x2B0C18 objects, or a table referenced from field +356), then rebuild one menu.
