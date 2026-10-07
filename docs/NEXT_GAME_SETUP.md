@@ -20,9 +20,9 @@ it becomes the Uncharted 2 port's repo. It contains no game data.
 1. **Your own Uncharted 2 dump.** Dump your own disc to a `.dec.iso`, and add it to RPCS3.
    Check that it boots and plays there. Decide whether to use the base game or a specific
    update, and write that version down. The prompt asks for it.
-2. **Disk space** on the drive holding `C:\rustREWRITE`: the extracted game, Ghidra
-   project and captures will be far larger than SUGC's. 150 GB free is a safe start (an
-   estimate).
+2. **Disk space** on the drive holding `C:\rustREWRITE`: about 80 GB free is enough to
+   start. Rough breakdown (estimates): dump about 20 GB, extracted files 20 to 40 GB,
+   captures 10 to 30 GB, Rust builds and Ghidra 10 to 15 GB, so 60 to 100 GB in total.
 3. **Rename the lab folder by hand** from `C:\SUGC-LAB` to `C:\rustREWRITE`, once the
    cleanup has finished and nothing (Remote Control, Ghidra, RPCS3) has it open. Then
    check it holds only `tools\`, `scripts\` and `reports\`, plus `src\` if you kept
@@ -39,3 +39,19 @@ it becomes the Uncharted 2 port's repo. It contains no game data.
    during overnight runs.
 7. **Fill in the prompt's three `<...>` placeholders** (dump path, game version, RPCS3
    folder) and paste everything below its line as the first message.
+
+## 3. Later, for the iPhone build (milestone 7)
+
+- **A Mac with Xcode.** iOS apps can only be built and signed on macOS. The new project
+  will give you exact steps when it gets there.
+- **An Apple account for sideloading.** A free account works, but the app must be
+  re-signed from the Mac every 7 days. A paid Apple Developer account lasts a year.
+- **A Bluetooth controller** paired to the iPhone (Xbox or PlayStation pads work with iOS).
+- **Space on the iPhone** for the converted game data, roughly 20 GB (an estimate).
+
+## 4. Play it on your phone in the meantime
+
+You can stream the real game from your PC to your iPhone today, with no porting: run
+Sunshine (https://github.com/LizardByte/Sunshine) on the PC with RPCS3, and Moonlight
+(https://github.com/moonlight-stream/moonlight-ios) on the iPhone with your controller
+paired to it. It needs the PC on and a good home Wi-Fi connection.

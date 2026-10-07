@@ -5,24 +5,29 @@ preparation in [NEXT_GAME_SETUP.md](NEXT_GAME_SETUP.md), then fill in the three
 `<...>` placeholders in the "Inputs" section.
 
 Marks used below: **(verified on SUGC)** means the trial saw it work or fail.
-**(inference)** means it comes from general knowledge of Uncharted 2 and the PS3 and has
-not been checked on this game. Phase 0 settles every inference before anything is built
-on it.
+**(inference)** means it comes from general knowledge of Uncharted 2, the PS3, Bevy or
+iOS and has not been checked. Settle each inference before building on it.
 
 Copy everything below the line as the opening message of the new project.
 
 ---
 
-You are my lead engineer on a long-running project: a native rewrite of **Uncharted 2:
-Among Thieves (PS3)** in Rust, built from game files I own. The first target is Windows
-PC. I may later move it onto the **Bevy** engine and/or ship a **mobile** build (Android
-first, then iOS). Design for that from day one, but don't build those yet.
+You are my lead engineer on a long-running hobby project: a **feature-by-feature
+recreation of Uncharted 2: Among Thieves (PS3) in hand-written Rust on the Bevy engine**,
+loading the real models, animations, textures, maps and sound from my own copy of the game
+at runtime. The end goal is a personal app on **my iPhone, played with a Bluetooth
+controller**, sideloaded for my own use and never published to the App Store. Develop and
+test on Windows PC first, since that is where the lab is, and keep the code iOS-ready from
+day one.
 
-This follows a trial run on Sonic's Ultimate Genesis Collection (SUGC), a PS3 collection
-of Sega Genesis games. The trial asked whether rewriting an RPCS3-era game natively in Rust
-works. It took Sonic 1 from disc to a playable native prototype, and I'm satisfied it does.
-The key lessons from the trial are written into this prompt. The trial's repo has been
-renamed to become this port's repo (see Inputs), so its code and notes are already there.
+**The bar is "feels basically the same", judged by me against RPCS3.** Rough edges are
+fine. We are not recompiling or emulating the game's code. We read its data formats and
+write the gameplay ourselves, one feature at a time, matching the original by eye and feel.
+
+This follows a trial on Sonic's Ultimate Genesis Collection (SUGC), a PS3 collection of
+Sega Genesis games. The trial took Sonic 1 from my disc to a playable native Rust
+prototype and proved the lab, the tooling and the legal rules below work. Its lessons are
+written into this prompt, and its repo has become this project's repo (see Inputs).
 Don't assume its game findings apply here.
 
 ## Inputs (fill in before sending)
@@ -30,70 +35,70 @@ Don't assume its game findings apply here.
 - My own decrypted disc dump: `<path to UC2 .dec.iso>`. I dumped it myself from my own disc.
 - Game version: `<base disc, or the exact update installed in RPCS3>`.
 - RPCS3: `<RPCS3 folder>`, which already runs the game. RPCS3 running my dump is the
-  ground-truth oracle.
+  reference for how everything should look and feel.
 - Lab folder: `C:\rustREWRITE` on my PC. It holds only `tools\` and `scripts\` from the
   trial (plus old reports); all trial game data was deleted. Portable Java 21, Ghidra
   12.1.3, ghidra-mcp, Ps3GhidraScripts, RenderDoc, Rust and a MinGW-w64 toolchain are
   already in `tools\`. Check them before installing anything. Put this game's derived data
-  in new subfolders there (`extract\`, `elf\`, `ghidra\`, `captures\`, `golden\`,
+  in new subfolders there (`extract\`, `elf\`, `ghidra\`, `captures\`, `cache\`,
   `inventory\`, `reports\`).
-- GitHub repo for this port: https://github.com/Deriv3d/UC2RewriteRust, connected to this
-  project. It was the trial's repo (formerly `SUGCtest`; use the new name, not the
-  redirect), so it already holds the trial's code and docs. Your first PR reorganises it
-  for Uncharted 2: keep the game-agnostic parts (`tools/publish-check/`,
-  `lab-scripts/pre-commit`, `.github/workflows/ci.yml`, `knowledge/README.md`,
-  `crates/asset-browser/`), keep `docs/LESSONS.md` and `docs/NEXT_GAME_PROMPT.md` as
-  history, and move the SUGC-specific crates and notes (`sugc-formats`, `sugc-lab`,
-  `sugc-viewer`, `m68k`, `z80`, `knowledge/formats/`, `knowledge/claims.md`, the PHASE and
-  STATUS docs) under an `archive/sugc/` folder or delete them. Ask me which before
-  deleting. Then rewrite README and STATUS for this game.
+- GitHub repo: https://github.com/Deriv3d/UC2RewriteRust, connected to this project. It was
+  the trial's repo (formerly `SUGCtest`; use the new name, not the redirect), so it already
+  holds the trial's code and docs. Your first PR reorganises it for Uncharted 2: keep the
+  game-agnostic parts (`tools/publish-check/`, `lab-scripts/pre-commit`,
+  `.github/workflows/ci.yml`, `knowledge/README.md`, `crates/asset-browser/`), keep
+  `docs/LESSONS.md` and `docs/NEXT_GAME_PROMPT.md` as history, and move the SUGC-specific
+  crates and notes (`sugc-formats`, `sugc-lab`, `sugc-viewer`, `m68k`, `z80`,
+  `knowledge/formats/`, `knowledge/claims.md`, the PHASE and STATUS docs) under
+  `archive/sugc/` or delete them. Ask me which before deleting. Then rewrite README and
+  STATUS for this game.
+- Hardware for iOS: an iPhone and a controller (Xbox or PlayStation Bluetooth pads work
+  with iOS). Building for iOS needs a Mac with Xcode; I'll tell you which Mac I'm using
+  when we get there.
 
 ## Ground rules (verified on SUGC; keep as is)
 
-- The repo must never contain game assets, keys, the executable, extracted or decompiled
-  game code, copied middleware, or any data from the disc. Users supply their own disc,
-  and a local pipeline extracts what is needed at build or run time. Tell users to dump
-  their own disc; never link to or suggest downloading game files.
-- From the first commit, add `publish-check`, a small Rust CLI that runs in CI on the
-  whole tree and as a pre-commit hook on staged files (`publish-check [--staged]
-  [--game-dir <lab extract dir>] [root]`). It refuses ISO/SELF/PKG/SFO files, PPU and SPU
-  ELFs, unknown binaries outside an allowlist, Ghidra/IDA auto-names (`FUN_xxxxxx` and the
-  like), decompiler headers, key-like hex, and any file or aligned 4 KiB block whose hash
-  matches a file in the lab extraction (`--game-dir`). Its tests use synthetic files only.
-  It also flags absolute paths under my user folder, so write paths in docs generically.
-  Extend it for this game's container formats once you
-  know them.
-- Run CI's exact commands (`cargo fmt --check`, `clippy -D warnings`, tests, publish-check)
-  locally before every push, on the same Rust version CI uses, and read CI after pushing.
-  On SUGC, CI was red on main for four commits before anyone noticed.
-- Single-player and offline only. Uncharted 2's multiplayer and any online service are out
-  of scope. Don't bypass DRM or anti-cheat.
-- Our code is clean-room: written from public documentation, our own analysis notes and
-  our own tests. Never paste decompiled output into the repo; describe behaviour in our own
-  words and cite Ghidra addresses.
-- Public test vectors (for example CPU instruction test suites) may be used as checkers if
-  they stay in the lab and never enter the repo. On SUGC this caught CPU bugs early.
+- The repo must never contain game assets, keys, the executable, extracted, decompiled or
+  translated game code, copied middleware, or any data from the disc. The app reads my own
+  game files at runtime. Never bundle game data into an app build either. Never link to or
+  suggest downloading game files.
+- Gameplay code is ours: written from watching RPCS3, public knowledge and our own notes.
+  Ghidra is for understanding data formats and what a system does. Describe findings in
+  our own words with Ghidra addresses; code is never copied or transcribed from Ghidra,
+  and decompiled or recompiled output never enters the repo.
+- From the first commit, `publish-check` (already in the repo) runs in CI on the whole tree
+  and as a pre-commit hook on staged files (`publish-check [--staged] [--game-dir <lab
+  extract dir>] [root]`). It refuses ISO/SELF/PKG/SFO files, PPU and SPU ELFs, unknown
+  binaries outside an allowlist, Ghidra/IDA auto-names (`FUN_xxxxxx` and the like),
+  decompiler headers, key-like hex, absolute paths under my user folder, and any file or
+  aligned 4 KiB block whose hash matches a file in the lab extraction. Its tests use
+  synthetic files only. Extend it for this game's formats once you know them.
+- Run CI's exact commands (`cargo fmt --check`, `cargo clippy --workspace --all-targets --
+  -D warnings`, `cargo test --workspace`, publish-check) locally before every push, on
+  the Rust version CI uses, and read CI after pushing. On SUGC, CI was red on main for four
+  commits before anyone noticed.
+- Single-player and offline only. Multiplayer and online services are out of scope. Don't
+  bypass DRM or anti-cheat.
+- Public tools and test data may be used as checkers if they stay in the lab and never
+  enter the repo. I approve each one first.
 
-## The trial's tooling, and what to reuse
+## What already exists in the repo, and what to reuse
 
-What to build early (proven on SUGC):
-- CI with two jobs: publish-check first, then `cargo fmt --check`, `cargo clippy
-  --workspace --all-targets -- -D warnings` and `cargo test --workspace`.
-- A claims ledger (`knowledge/claims.md`): each analysis claim with an ID, a status of
+- `tools/publish-check/`, `lab-scripts/pre-commit` and `.github/workflows/ci.yml`
+  (publish-check job, then fmt, clippy and tests).
+- `knowledge/README.md`: the claims ledger (each claim with an ID, a status of
   `confirmed / negative / unknown / hypothesis`, and its evidence or the check that would
-  settle it. "Negative" needs the search that would have found it. Plus one field note per
-  non-obvious lesson (what happened, what we learned, how to apply it).
-- A lab CLI crate (`roundtrip <file>`, `extract <archive> <outdir>`) that refuses to write
-  inside the repo.
-- A game-agnostic asset viewer crate (egui/eframe, rodio for audio) that browses images,
-  audio and string tables, with a small per-game "disc source" plugged in.
-- Capture scripts: these already exist in `C:\rustREWRITE\scripts` (PowerShell): launch,
-  frame, audio and memory, each writing a `manifest.json` with the RPCS3 version, settings,
-  script and waits. Generalise any SUGC-specific paths or title IDs into config, and commit
-  them to this repo (they hold no game data), so they never again live only on my PC.
-
-The publish-check, hook, CI, claims rules and asset viewer above already exist in the
-repo from the trial. Reuse them rather than rewriting them.
+  settle it; "negative" needs the search that would have found it) and one field note per
+  non-obvious lesson.
+- `crates/asset-browser/`: a game-agnostic egui asset viewer (images, audio, string tables)
+  with a small per-game "disc source" plugged in. Use it to check each decoded format
+  before it goes into Bevy.
+- `crates/sugc-lab/` as a pattern for a lab CLI (`roundtrip <file>`, `extract <archive>
+  <outdir>`) that refuses to write inside the repo.
+- Capture scripts in `C:\rustREWRITE\scripts` (PowerShell): launch, frame, audio and
+  memory, each writing a `manifest.json` with the RPCS3 version, settings, script and
+  waits. Generalise any SUGC-specific paths or title IDs into config and commit them to
+  the repo (they hold no game data), so they never again live only on my PC.
 
 External tools, with links:
 - RPCS3: https://github.com/RPCS3/rpcs3
@@ -105,56 +110,85 @@ External tools, with links:
 - Reference only, don't run: REA (claims-with-evidence idea, pins Ghidra 12.1.2)
   https://github.com/morluto/rea; universal-modder (publish-check and field-note ideas)
   https://github.com/rehan-remade/universal-modder
-- Rendering and engine: wgpu https://github.com/gfx-rs/wgpu, Bevy
-  https://github.com/bevyengine/bevy
+- Engine: Bevy https://github.com/bevyengine/bevy (renders through wgpu
+  https://github.com/gfx-rs/wgpu, which covers Metal on iOS).
+- Considered and not chosen: ps3recomp https://github.com/sp00nznet/ps3recomp, a PS3
+  static recompiler. It is pre-release, and no big commercial game was fully playable
+  through it as of mid-2026. It may still help as a reference for how a PS3 system
+  behaves, but its output is the game's own code and can never be committed. Emulating
+  the PS3 ourselves (what the trial did for the Genesis) isn't an option either: that is
+  RPCS3 itself.
+- Play the real game on the phone in the meantime: Sunshine
+  https://github.com/LizardByte/Sunshine on the PC streaming RPCS3 to Moonlight
+  https://github.com/moonlight-stream/moonlight-ios on the iPhone. That's streaming, not
+  a port, and needs no work from you.
 - Ignore unless you justify them first: ILSpy, Cpp2IL (they target .NET/Unity, not native
   PS3 code) and IDA MCP (paid IDA required).
 
-## What this game is (verify in Phase 0, do not assume)
+
+## What this game is (verify early, do not assume)
 
 All of this is **inference** until you confirm it:
-- Unlike SUGC, there is no embedded emulator to swap out. SUGC was a thin PS3 frontend
-  around a Genesis emulator, so porting it mostly meant writing our own Genesis emulator.
-  Uncharted 2 is a full PS3 engine, so the port is the whole game's code.
-- It leans heavily on the SPUs (animation, physics, culling, audio and post-processing
-  are commonly cited). SUGC had one small SPU task. Expect many SPU programs and jobs here,
-  and expect the SPU work to be the largest part of the port.
-- Gameplay likely runs partly through Naughty Dog's own compiled script data, not only
-  C++. Find the script format and how the runtime executes it before planning PPU work.
-- Expect large streaming archives and many asset formats, not SUGC's 27 files.
-- Expect extra PRX code modules or overlays besides the main executable, each needing its
-  own decryption and analysis.
-- Game updates may replace the executable. Work against the one version named above so
-  addresses stay stable.
+- Uncharted 2 is a full PS3 engine. Character skinning, animation blending, physics and
+  much of the rendering lean on the SPUs. We don't port that code; we rebuild the
+  behaviour in Bevy. But some asset data may be stored in SPU-friendly packed or
+  compressed forms, so expect to decode those formats ourselves.
+- Assets come in large streaming archives with many formats: meshes and skeletons,
+  animation clips, textures, level geometry and collision, audio banks, and compiled
+  script data that drives cutscenes and events.
+- Game updates may change file formats. Work against the one version named above.
 
-## Architecture, given the Bevy and mobile goals
+## Approach
 
-Recommended shape (my default; give me evidence before changing it):
-- **Static recompilation, not hand rewriting, for the bulk of the PPU code.** Translate PPU
-  functions to Rust (or to native code through Rust) so the game's own engine logic runs
-  natively, with OS and library calls routed to our runtime. Hand-rewrite in idiomatic
-  Rust only what must change: platform layer, renderer, audio, input, file I/O, and each
-  SPU job. A from-scratch reimplementation of the gameplay on Bevy would be a new game,
-  not a port; only consider it per subsystem, later, with evidence.
-- **Layering**, so Bevy and mobile stay possible:
-  - `core`: recompiled game code plus our runtime. Pure Rust, no windowing, no global
-    state the host can't own, deterministic stepping from a savestate.
-  - `platform` trait: file access to the user's extracted data, timing, input, audio out,
-    and a GPU device. The first host is a plain winit + wgpu desktop app.
-  - `render`: the RSX command stream translated to wgpu. wgpu covers Vulkan, Metal, DX12
-    and GLES, which is also what Bevy renders through and what phones need. Shaders go
-    through our own RSX shader translator to WGSL or SPIR-V.
-  - Later hosts: a Bevy app that drives `core` as a system and draws `render`'s output as a
-    texture or custom render node, and an Android/iOS shell. Bevy's ECS won't map onto the
-    game's own object model, so Bevy hosts the game rather than re-expressing it.
-- **Endianness**: the guest is big-endian and every target host is little-endian. Keep
-  byte-swapping inside small, tested accessors, and isolate any `unsafe` behind small
-  tested interfaces. Tell me when you add `unsafe`.
-- **Mobile constraints**, all inference: ARM64 targets mean recompiled code must not
-  assume x86. Memory budget matters on phones, the user's game data must be extracted on a
-  PC and copied onto the device, touch controls need designing, and store distribution of
-  an app that needs a user-supplied disc dump is uncertain. Treat mobile as a later
-  vertical slice, not a phase-0 requirement.
+- **Data first, then behaviour.** For each feature: find the files involved, write a Rust
+  parser (proven by round trip: parse, re-serialize, byte-compare on my copy wherever the
+  format allows), convert to Bevy-ready data, then write the behaviour.
+- **Runtime loading from my files.** A converter (a lab CLI) turns my extracted game files
+  into a local cache of Bevy-friendly assets (meshes, skeletons, clips, textures in a GPU
+  format iOS supports). The app loads that cache from a folder: on PC the lab folder, on
+  iPhone the app's Documents folder, filled from the PC through Finder or the Files app.
+  The cache is game data, so it never enters the repo or an app build.
+- **Crates**: a formats crate (parsers, no Bevy dependency), a converter CLI, and the Bevy
+  game crate. Keep platform specifics (file locations, input mapping, iOS packaging) in
+  one small module.
+- **Controller first.** Design every control around a gamepad, matching the PS3 layout.
+  Touch controls are out of scope. **Inference to check early:** Bevy's gamepad support
+  goes through gilrs, which may not cover iOS controllers; if it doesn't, write a small
+  bridge to Apple's GameController framework.
+- **Stay iOS-compatible throughout.** No Windows-only APIs in the game crates. If a Mac
+  is available early, a quick iPhone smoke test after milestone 1 catches Metal, texture
+  format, memory and file access problems while the app is small; otherwise they wait for
+  milestone 7.
+- **Don't chase exactness a player wouldn't notice.** Every milestone must be something I
+  can see or play.
+- **Verification is by my eye and feel against RPCS3.** For each milestone, give me side-by
+  -side steps: what to do in RPCS3, what to do in our app, and what to compare. Use the
+  capture scripts for screenshots and audio where a side-by-side helps. Reference frames key
+  on a frame number or a savestate, never a wall-clock wait (verified on SUGC: same 40 s
+  wait, different frames).
+
+## Milestones, in order
+
+Each milestone is its own branch and PR, done when I say it feels right.
+0. **Lab and inventory**: extract and inventory the disc with hashes, decrypt the
+   executable, load it in Ghidra, and map the archive formats. Find where Drake's model,
+   textures, skeleton and animations live.
+1. **Drake on screen**: his model with textures in a Bevy scene, viewable with an orbit
+   camera.
+2. **Drake animated**: his own idle, run, jump and climb animations playing on the model.
+3. **Drake controlled**: running, jumping and climbing with a controller on a simple test
+   floor and wall, blending his animations the way the game does.
+4. **A real map**: one level's geometry, textures and collision loaded, walkable, with
+   Drake moving through it.
+5. **Camera, then gunplay, then enemies**: the third-person camera, then aiming, shooting
+   and cover, then enemies and their AI.
+6. **Cutscenes, sound, menus and the rest**: in-engine cutscenes, music and sound
+   effects, menus, then whatever I pick next.
+7. **iPhone build**: built with Xcode on a Mac and sideloaded to my iPhone (a free Apple
+   account needs re-signing every 7 days; a paid developer account lasts a year). The
+   converted game data (roughly 20 GB, an estimate) is copied from the PC into the app's
+   Documents folder. Played with my controller.
+Before each milestone, tell me the plan, what "done" means, and the side-by-side check.
 
 ## Lab setup (verified on SUGC)
 
@@ -177,72 +211,33 @@ Recommended shape (my default; give me evidence before changing it):
 - If you build from the cloud project's shared folder, set `CARGO_TARGET_DIR` outside it,
   because that folder is noexec.
 
-## Tooling: what to expect
+## Tooling notes (verified on SUGC)
 
-- **RPCS3 CLI** (verified on SUGC with 0.0.43): `--decrypt` gives a reproducible ELF and
-  `--no-gui` boots. Closing a `--no-gui` window does not stop it; use the GDB server's
-  kill. The GDB server allows one connection per boot, breakpoints only work under the PPU
-  interpreter, and "start paused" is ignored for CLI boots. RSX capture had no CLI path,
-  needed a manual menu click, and 0.0.43 could not replay the capture. Re-check all of this
-  on the current RPCS3.
-- **Ghidra + ghidra-mcp** (verified on SUGC with 12.1.3): language `PowerPC:BE:64:64-32addr`
-  plus Ps3GhidraScripts named every import, and Ghidra's addresses matched RPCS3 at
-  runtime (no relocation of the main executable). Load programs through ghidra-mcp's API;
-  its README's `list_functions` example returned 404. **Inference:** a much larger,
-  heavily optimised executable will analyse slower and will likely hit the Cell VMX
-  `lvlx/lvrx` decode gaps that SUGC never did. Measure the bad-instruction count and the
-  decompile rate on a random sample early.
-- **SPU tooling is the main gap.** The trial found no maintained Ghidra SPU module
-  (unknown, not proven absent). In Phase 0 settle the route with evidence: a working Ghidra
-  module, RPCS3's SPU disassembler, or a SLEIGH module we write from IBM's public SPU ISA
-  documents. Start by counting SPU programs (embedded big-endian ELFs with the SPU machine
-  type, plus SPURS job and taskset images) and grouping them by role. On SUGC that worked
-  without any disassembly.
-- **Captures** (verified on SUGC): RenderDoc in-app capture of RPCS3 on Vulkan to PNG,
-  WASAPI loopback audio at 48 kHz stereo, and our own GDB-protocol memory dumper.
-- **Reference frames must key on an exact frame number or a savestate**, never a
-  wall-clock wait (verified on SUGC: same 40 s wait, different frames). **Inference:**
-  this matters more for a 3D game with streaming, physics and particles. Get deterministic
-  replay (savestate plus recorded input) working before collecting golden data.
-
-## Strategy: RPCS3 is the oracle
-
-Work in phases, and finish each phase's verification against RPCS3 before the next.
-Before each phase, tell me the plan, what "done" means, and how you'll verify it.
-
-0. **Lab**: extract, decrypt, inventory with hashes, Ghidra, capture scripts. Settle the
-   number of executables and modules, SPU program count and roles, the main archive
-   formats, the script data format, and how well Ghidra handles this executable. Report
-   honestly what works before building on it.
-1. **Data**: archive and asset formats (streaming packages, textures, meshes, animation,
-   audio, scripts). Rust parsers proven by round trip (parse, re-serialize, byte-compare)
-   on my copy, and plug a disc source into the reused asset viewer. I check textures and
-   audio by eye and ear.
-2. **Ground truth**: deterministic captures from savestates with recorded input: frames,
-   audio, RSX command streams, and SPU job inputs and outputs. Kept in the lab, never
-   committed.
-3. **PPU**: static recompilation with OS and library calls routed to our runtime.
-   Decision gate first: with evidence, decide what is recompiled and what is
-   hand-written, and report it to me. Milestone: main menu.
-4. **SPU**: rewrite each SPU job in Rust on the CPU, one at a time, each diffed against
-   captured inputs and outputs, then optimise. Order the jobs by what the main menu and
-   the first level need. **Inference:** this is the largest phase.
-5. **Renderer and audio**: RSX on wgpu, validated with image diffs against RPCS3; audio
-   validated against loopback captures.
-6. **Vertical slices**: main menu, then the first level on desktop, then the rest. Then a
-   Bevy host and a mobile build as separate slices, if I still want them.
+- **RPCS3 CLI** (0.0.43): `--decrypt` gives a reproducible ELF and `--no-gui` boots.
+  Closing a `--no-gui` window does not stop it; use the GDB server's kill. The GDB server
+  allows one connection per boot, breakpoints only work under the PPU interpreter, and
+  "start paused" is ignored for CLI boots. Re-check on the current RPCS3.
+- **Ghidra + ghidra-mcp** (12.1.3): language `PowerPC:BE:64:64-32addr` plus
+  Ps3GhidraScripts named every import, and Ghidra's addresses matched RPCS3 at runtime.
+  Load programs through ghidra-mcp's API; its README's `list_functions` example returned
+  404. **Inference:** a much larger executable will analyse slower and may hit Cell VMX
+  `lvlx/lvrx` decode gaps. Use it to find the code that loads and reads each asset format.
+- **Captures**: RenderDoc in-app capture of RPCS3 on Vulkan to PNG (also useful to see
+  how the game draws a mesh), WASAPI loopback audio at 48 kHz stereo, and our own
+  GDB-protocol memory dumper.
+- **Endianness**: the PS3 data is big-endian and every target is little-endian. Do the
+  byte-swapping in the parsers, in small tested accessors.
 
 ## How to work with me
 
-- I'm the hands and eyes for playing, visual and listening checks, and any menu click RPCS3
-  needs. Give me exact steps.
-- Keep `docs/STATUS.md` (works / unknown / blocked) and a claims ledger with statuses
-  `confirmed / negative / unknown / hypothesis`, where "unknown" is never merged into
-  "negative". Also keep a `docs/LESSONS.md` log like the trial's.
+- I'm the hands and eyes for playing, the side-by-side checks, and anything on my PC,
+  Mac or iPhone that needs a click. Give me exact steps.
+- Keep `docs/STATUS.md` (works / unknown / blocked), the claims ledger, and
+  `docs/LESSONS.md`.
 - Each coherent piece of work goes on its own branch and PR. I merge.
 - Be honest about uncertainty. Don't give time estimates. Tell me you'll notify me when a
   run finishes or needs me, and what would stop it.
 - Speak English only. I often leave the PC on overnight, so batch everything you need
   from me into one message before I go. My local time is roughly UTC-7.
-- Start with Phase 0: list what you still need from me, what you'll check about the
-  tooling first, and the repo layout.
+- Start with milestone 0: list what you still need from me, what you'll check first, and
+  how you'll reorganise the repo.
