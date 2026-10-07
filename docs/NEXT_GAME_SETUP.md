@@ -3,7 +3,7 @@
 A checklist for the owner, written 2026-10-07 when the SUGC trial ended. Do these, then
 paste [NEXT_GAME_PROMPT.md](NEXT_GAME_PROMPT.md) (below its line) into the new project.
 
-## 1. Trial cleanup (done 2026-10-07, in the trial's Phase 0 thread)
+## 1. Trial cleanup (requested 2026-10-07, carried out in the trial's Phase 0 thread)
 
 Ez asked for all trial game data to be deleted, including the SUGC `.dec.iso` and the
 lab's separate RPCS3 config copy, and for `C:\SUGC-LAB` to be renamed `C:\rustREWRITE`.
@@ -23,9 +23,19 @@ it becomes the Uncharted 2 port's repo. It contains no game data.
 2. **Disk space** on the drive holding `C:\rustREWRITE`: the extracted game, Ghidra
    project and captures will be far larger than SUGC's. 150 GB free is a safe start (an
    estimate).
-3. **Rename the repo** to `UC2RewriteRust` in its GitHub settings, if not done yet.
-4. **A new Claude project** for the port. Connect GitHub and add https://github.com/Deriv3d/UC2RewriteRust to it,
+3. **Rename the lab folder by hand** from `C:\SUGC-LAB` to `C:\rustREWRITE`, once the
+   cleanup has finished and nothing (Remote Control, Ghidra, RPCS3) has it open. Then
+   check it holds only `tools\`, `scripts\` and `reports\`, plus `src\` if you kept
+   the code checkout.
+4. **Rename the repo** on GitHub: open https://github.com/Deriv3d/SUGCtest, go to
+   Settings, change the repository name to `UC2RewriteRust`, and click Rename.
+5. **Point any clone on your PC at the new name.** In each folder where the repo is
+   cloned (for example `C:\rustREWRITE\src\SUGCtest`, if it still exists), run:
+   `git remote set-url origin https://github.com/Deriv3d/UC2RewriteRust.git`
+   then `git fetch` to check it works. GitHub redirects the old name for now, but don't
+   rely on it.
+6. **A new Claude project** for the port. Connect GitHub and add https://github.com/Deriv3d/UC2RewriteRust to it,
    allow Remote Control for `C:\rustREWRITE` when asked, and keep the PC from sleeping
    during overnight runs.
-5. **Fill in the prompt's three `<...>` placeholders** (dump path, game version, RPCS3
+7. **Fill in the prompt's three `<...>` placeholders** (dump path, game version, RPCS3
    folder) and paste everything below its line as the first message.
