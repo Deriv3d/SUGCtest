@@ -10,6 +10,20 @@ learned, and how to apply it. Tag each one **[carries]** if it should apply to a
 port, **[SUGC]** if it is specific to this game, or **[check]** if we expect it to differ
 on the next game and it must be re-verified there.
 
+## Scope
+
+- **2026-10-06:** Ez narrowed the trial to **Sonic 1 end to end**. Its purpose is to test
+  whether rewriting an RPCS3 game natively in Rust works at all, not to port the whole
+  collection. Uncharted 2 will start in a separate project with none of this context, so
+  NEXT_GAME_PROMPT.md must stand on its own.
+
+- **2026-10-07: the trial ended.** By then: every SUGC disc file was classified; the ROM
+  archive, texture container, string tables and music had round-tripping Rust parsers; a
+  desktop asset viewer decoded all 394 assets; the 68000 and Z80 CPUs passed public test
+  vectors; and a native prototype booted Sonic 1 from the owner's own disc to the title
+  screen and demo (no sound yet). Ez judged that enough proof that the approach works.
+  The Uncharted 2 prompt was finalised (NEXT_GAME_PROMPT.md, setup in NEXT_GAME_SETUP.md).
+
 ## Worked
 
 ### Lab and workflow
@@ -39,6 +53,15 @@ on the next game and it must be re-verified there.
   everything answered in one reply.
 
 ### Tooling results
+- **Public test vectors as a lab-only checker** (2026-10-06) [carries]. Ez agreed to use
+  public CPU instruction test suites, kept in the lab and never committed. The 68000 passed
+  821,970 of 821,973 and the Z80 all 1,000,000, cycle counts included. That caught CPU bugs
+  long before a game ran.
+- **A game-agnostic viewer crate plus a per-game disc source** [carries]. The egui asset
+  browser is reusable as is; only the source that reads the disc is game-specific.
+- **Owner checks by eye and ear** [carries]. Ez confirmed decoded textures and music, which
+  automated checks couldn't settle.
+
 
 - **RPCS3 CLI** [carries, version-dependent]. RPCS3 0.0.43 `--decrypt` turns the disc
   executable into an ELF reproducibly (same SHA-256 twice), and `--no-gui` boots the game.
@@ -105,6 +128,11 @@ on the next game and it must be re-verified there.
   Run the same fmt/clippy/test commands as CI before every push, and check CI after it.
   CI also uses the latest stable Rust, which brought a new clippy lint the local
   toolchain didn't know; test with the same toolchain as CI or pin one in the repo.
+- **Capture scripts lived only on the owner's PC** [carries]. They were never committed,
+  so the lab's `scripts\` folder is the only copy. Commit lab scripts (they contain no
+  game data) to the repo from the start.
+- **RSX captures made with RPCS3 0.0.43 couldn't be replayed** by that build (C-010)
+  [check].
 - **Shared project folder is noexec** [carries]. Builds from `/mnt/project-files` fail
   unless `CARGO_TARGET_DIR` points outside it.
 
