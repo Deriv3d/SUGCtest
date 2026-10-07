@@ -23,6 +23,10 @@ on the next game and it must be re-verified there.
   vectors; and a native prototype booted Sonic 1 from the owner's own disc to the title
   screen and demo (no sound yet). Ez judged that enough proof that the approach works.
   The Uncharted 2 prompt was finalised (NEXT_GAME_PROMPT.md, setup in NEXT_GAME_SETUP.md).
+- **2026-10-07: Uncharted 2 approach changed.** Ez chose a feature-by-feature recreation
+  in hand-written Rust on Bevy, loading the game's real assets from the owner's disc, with
+  "feels basically the same" as the bar and a sideloaded iPhone app with a controller as
+  the end goal. Static recompilation (ps3recomp) was considered and not chosen.
 
 ## Worked
 
