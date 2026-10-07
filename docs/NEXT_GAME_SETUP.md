@@ -12,9 +12,8 @@ Ps3GhidraScripts, RenderDoc, Rust, MinGW-w64), `scripts\` (the capture scripts, 
 were never committed anywhere else) and `reports\` (own-words lab reports). That folder
 becomes the Uncharted 2 lab.
 
-The SUGCtest GitHub repo contains no game data. Keeping it costs nothing and lets the new
-project copy publish-check, CI and the viewer instead of rewriting them, but the prompt
-works without it.
+Ez is keeping the GitHub repo and renaming it from `SUGCtest` to `UC2RewriteRust`, so
+it becomes the Uncharted 2 port's repo. It contains no game data.
 
 ## 2. Create for Uncharted 2
 
@@ -24,10 +23,9 @@ works without it.
 2. **Disk space** on the drive holding `C:\rustREWRITE`: the extracted game, Ghidra
    project and captures will be far larger than SUGC's. 150 GB free is a safe start (an
    estimate).
-3. **A new private GitHub repo**, e.g. `UC2-port`, created empty. The new project can't
-   create it for you.
-4. **A new Claude project** for the port. Connect GitHub and add the new repo to it,
+3. **Rename the repo** to `UC2RewriteRust` in its GitHub settings, if not done yet.
+4. **A new Claude project** for the port. Connect GitHub and add https://github.com/Deriv3d/UC2RewriteRust to it,
    allow Remote Control for `C:\rustREWRITE` when asked, and keep the PC from sleeping
    during overnight runs.
-5. **Fill in the prompt's four `<...>` placeholders** (dump path, game version, RPCS3
-   folder, repo URL) and paste everything below its line as the first message.
+5. **Fill in the prompt's three `<...>` placeholders** (dump path, game version, RPCS3
+   folder) and paste everything below its line as the first message.

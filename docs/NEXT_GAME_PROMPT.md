@@ -1,7 +1,7 @@
 # Prompt for the next port: Uncharted 2 (PS3)
 
 Final version, written 2026-10-07 when the SUGC trial ended. Before using it, do the
-preparation in [NEXT_GAME_SETUP.md](NEXT_GAME_SETUP.md), then fill in the four
+preparation in [NEXT_GAME_SETUP.md](NEXT_GAME_SETUP.md), then fill in the three
 `<...>` placeholders in the "Inputs" section.
 
 Marks used below: **(verified on SUGC)** means the trial saw it work or fail.
@@ -21,10 +21,9 @@ first, then iOS). Design for that from day one, but don't build those yet.
 This follows a trial run on Sonic's Ultimate Genesis Collection (SUGC), a PS3 collection
 of Sega Genesis games. The trial asked whether rewriting an RPCS3-era game natively in Rust
 works. It took Sonic 1 from disc to a playable native prototype, and I'm satisfied it does.
-Everything you need from the trial is written into this prompt. The trial's repo,
-https://github.com/Deriv3d/SUGCtest, may or may not still exist. If it does, you may copy
-from it (list below), but nothing here depends on it. Don't assume its game findings
-apply here.
+The key lessons from the trial are written into this prompt. The trial's repo has been
+renamed to become this port's repo (see Inputs), so its code and notes are already there.
+Don't assume its game findings apply here.
 
 ## Inputs (fill in before sending)
 
@@ -38,8 +37,16 @@ apply here.
   already in `tools\`. Check them before installing anything. Put this game's derived data
   in new subfolders there (`extract\`, `elf\`, `ghidra\`, `captures\`, `golden\`,
   `inventory\`, `reports\`).
-- GitHub repo for this port: `<https://github.com/<me>/<repo>>`, private and empty, already
-  connected to this project.
+- GitHub repo for this port: https://github.com/Deriv3d/UC2RewriteRust, connected to this
+  project. It was the trial's repo (formerly `SUGCtest`; use the new name, not the
+  redirect), so it already holds the trial's code and docs. Your first PR reorganises it
+  for Uncharted 2: keep the game-agnostic parts (`tools/publish-check/`,
+  `lab-scripts/pre-commit`, `.github/workflows/ci.yml`, `knowledge/README.md`,
+  `crates/asset-browser/`), keep `docs/LESSONS.md` and `docs/NEXT_GAME_PROMPT.md` as
+  history, and move the SUGC-specific crates and notes (`sugc-formats`, `sugc-lab`,
+  `sugc-viewer`, `m68k`, `z80`, `knowledge/formats/`, `knowledge/claims.md`, the PHASE and
+  STATUS docs) under an `archive/sugc/` folder or delete them. Ask me which before
+  deleting. Then rewrite README and STATUS for this game.
 
 ## Ground rules (verified on SUGC; keep as is)
 
@@ -85,10 +92,8 @@ What to build early (proven on SUGC):
   script and waits. Generalise any SUGC-specific paths or title IDs into config, and commit
   them to this repo (they hold no game data), so they never again live only on my PC.
 
-Optional, only if https://github.com/Deriv3d/SUGCtest still exists: copy
-`tools/publish-check/`, `lab-scripts/pre-commit`, `.github/workflows/ci.yml`,
-`knowledge/README.md`, `docs/LESSONS.md` and `crates/asset-browser/` from it rather than
-rewriting them.
+The publish-check, hook, CI, claims rules and asset viewer above already exist in the
+repo from the trial. Reuse them rather than rewriting them.
 
 External tools, with links:
 - RPCS3: https://github.com/RPCS3/rpcs3
