@@ -1,6 +1,6 @@
 # MSF music stream (`USRDIR/sounds/music/*.msf`)
 
-Status: **understood (container)**. The decode is pending an owner listening check.
+Status: **understood**. Container and decode are both confirmed.
 
 The disc has one file: `retro_dreams.msf`, 2,411,904 bytes. It's Sony's MSF stream format; this
 note describes the variant on this disc.
@@ -39,7 +39,7 @@ For this file that gives 150,740 frames = 4,220,720 samples = **95.7 s** at 44.1
 ## Verification
 - **Loopback comparison: inconclusive.** A loopback recording made 30–50 s after boot doesn't correlate with this track (0.032, the same as a no-match baseline). The game was probably playing other audio at that point.
 - **Nibble order: inconclusive.** A decode with swapped nibble order also looks statistically plausible, so the layout above (the commonly documented one) still needs a listening check.
-- Pending: the owner listens to the decoded WAV.
+- **Owner listening check, 2026-10-06:** the decoded WAV "sounds perfect". This confirms the documented nibble order.
 
 ## Sound effects
 The 17 sound effects in `flog_u.fpg` are plain RIFF/WAVE files: PCM, 16-bit, mono, 22,050 Hz, 12.0 s in total. They need no decoding.

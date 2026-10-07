@@ -1,0 +1,11 @@
+[package]
+name = "asset-browser"
+version = "0.1.0"
+description = "Game-agnostic asset browser: lists assets from a source and shows images, plays audio, shows text."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+eframe = "0.36"
+rodio = "0.22"

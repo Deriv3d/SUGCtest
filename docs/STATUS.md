@@ -27,6 +27,14 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
   byte-identical, 147/147 inflate), `flog_c.fpg` **PASS** (12 entries, byte-identical,
   12/12 inflate).
 
+- `crates/asset-browser` (game-agnostic) + `crates/sugc-viewer` (SUGC source): a desktop viewer for the
+  user's own disc. It lists archive entries, UI textures and the music, shows images and string tables,
+  and plays audio. Run `sugc-viewer <PS3_GAME/USRDIR>`; add `--check` to decode everything without a window.
+  On the owner's disc, `--check` gives 394 assets, 0 failures (285 images, 18 audio, 9 string tables,
+  82 info). A rebuilt menu isn't possible yet; it's blocked on the sprite-to-texture link (C-020).
+- Windows builds with the GNU Rust toolchain need a full MinGW-w64 (binutils `as`/`dlltool`) on PATH
+  for the `windows` crates the viewer pulls in. The lab uses a portable WinLibs build.
+
 ## Confirmed findings
 
 - One PPU executable; ROMs in one zlib-packed archive (C-001).
@@ -49,14 +57,14 @@ Claims and evidence: [../knowledge/claims.md](../knowledge/claims.md).
 - Names for 78 of 147 `flog_u` entries and 9 of 12 `flog_c` entries; 8 unidentified binaries.
 - Font glyph metrics; names of the 9 string tables.
 - `streams/*.spr` scene-graph record layout (compression layer and stream roles done: [../knowledge/formats/spr.md](../knowledge/formats/spr.md)), MP4 codec parameters.
-- MSF decode needs an owner listening check (C-019).
 - Where the archive's little-endian table is byte-swapped after load.
 - What the per-game break-slot callbacks do (C-016).
 - Ghidra SPU route (C-004).
 
 ## Blocked on the owner
 
-- Nothing at the moment. (RSX captures must be made by hand from RPCS3's menu, C-010.)
+- A look at the viewer, and a menu capture for texture verification.
+- Otherwise nothing. (RSX captures must be made by hand from RPCS3's menu, C-010.)
 
 ## Known tool quirks
 
