@@ -1,7 +1,7 @@
 # Prompt for the next port: Uncharted 2 (PS3)
 
 Final version, written 2026-10-07 when the SUGC trial ended. Before using it, do the
-preparation in [NEXT_GAME_SETUP.md](NEXT_GAME_SETUP.md), then fill in the five
+preparation in [NEXT_GAME_SETUP.md](NEXT_GAME_SETUP.md), then fill in the four
 `<...>` placeholders in the "Inputs" section.
 
 Marks used below: **(verified on SUGC)** means the trial saw it work or fail.
@@ -21,9 +21,10 @@ first, then iOS). Design for that from day one, but don't build those yet.
 This follows a trial run on Sonic's Ultimate Genesis Collection (SUGC), a PS3 collection
 of Sega Genesis games. The trial asked whether rewriting an RPCS3-era game natively in Rust
 works. It took Sonic 1 from disc to a playable native prototype, and I'm satisfied it does.
-Everything you need from the trial is written into this prompt. Its repo,
-https://github.com/Deriv3d/SUGCtest, is reference you can copy from (list below). Don't
-assume its game findings apply here.
+Everything you need from the trial is written into this prompt. The trial's repo,
+https://github.com/Deriv3d/SUGCtest, may or may not still exist. If it does, you may copy
+from it (list below), but nothing here depends on it. Don't assume its game findings
+apply here.
 
 ## Inputs (fill in before sending)
 
@@ -31,9 +32,12 @@ assume its game findings apply here.
 - Game version: `<base disc, or the exact update installed in RPCS3>`.
 - RPCS3: `<RPCS3 folder>`, which already runs the game. RPCS3 running my dump is the
   ground-truth oracle.
-- Lab folder: `<e.g. C:\UC2-LAB>`, empty except for `tools\` and `scripts\` copied over
-  from the trial. Portable Java 21, Ghidra 12.1.3, RenderDoc, Rust and a MinGW-w64
-  toolchain are already in `tools\`. Check them before installing anything.
+- Lab folder: `C:\rustREWRITE` on my PC. It holds only `tools\` and `scripts\` from the
+  trial (plus old reports); all trial game data was deleted. Portable Java 21, Ghidra
+  12.1.3, ghidra-mcp, Ps3GhidraScripts, RenderDoc, Rust and a MinGW-w64 toolchain are
+  already in `tools\`. Check them before installing anything. Put this game's derived data
+  in new subfolders there (`extract\`, `elf\`, `ghidra\`, `captures\`, `golden\`,
+  `inventory\`, `reports\`).
 - GitHub repo for this port: `<https://github.com/<me>/<repo>>`, private and empty, already
   connected to this project.
 
@@ -43,12 +47,15 @@ assume its game findings apply here.
   game code, copied middleware, or any data from the disc. Users supply their own disc,
   and a local pipeline extracts what is needed at build or run time. Tell users to dump
   their own disc; never link to or suggest downloading game files.
-- From the first commit, add `publish-check` (copy `tools/publish-check` from SUGCtest)
-  running in CI and as a pre-commit hook. It refuses ISO/SELF/PKG/SFO files, PPU and SPU
+- From the first commit, add `publish-check`, a small Rust CLI that runs in CI on the
+  whole tree and as a pre-commit hook on staged files (`publish-check [--staged]
+  [--game-dir <lab extract dir>] [root]`). It refuses ISO/SELF/PKG/SFO files, PPU and SPU
   ELFs, unknown binaries outside an allowlist, Ghidra/IDA auto-names (`FUN_xxxxxx` and the
   like), decompiler headers, key-like hex, and any file or aligned 4 KiB block whose hash
   matches a file in the lab extraction (`--game-dir`). Its tests use synthetic files only.
-  Extend it for this game's container formats once you know them.
+  It also flags absolute paths under my user folder, so write paths in docs generically.
+  Extend it for this game's container formats once you
+  know them.
 - Run CI's exact commands (`cargo fmt --check`, `clippy -D warnings`, tests, publish-check)
   locally before every push, on the same Rust version CI uses, and read CI after pushing.
   On SUGC, CI was red on main for four commits before anyone noticed.
@@ -62,17 +69,26 @@ assume its game findings apply here.
 
 ## The trial's tooling, and what to reuse
 
-Reuse from https://github.com/Deriv3d/SUGCtest:
-- `tools/publish-check/` and `lab-scripts/pre-commit` (the hook).
-- `.github/workflows/ci.yml` (publish-check job, then fmt, clippy and tests).
-- `knowledge/README.md` (claims ledger and field-note rules) and `docs/LESSONS.md`.
-- `crates/asset-browser/`: a game-agnostic egui asset viewer (images, audio, string tables)
-  that each game plugs a disc source into.
-- `crates/sugc-lab/` as a pattern for a lab CLI (`roundtrip`, `extract`) that refuses to
-  write inside the repo.
-- The capture scripts are not in the repo. They are in the lab's `scripts\` folder on my PC
-  (PowerShell): launch, frame, audio and memory. Each writes a `manifest.json` with the
-  RPCS3 version, settings, script and waits.
+What to build early (proven on SUGC):
+- CI with two jobs: publish-check first, then `cargo fmt --check`, `cargo clippy
+  --workspace --all-targets -- -D warnings` and `cargo test --workspace`.
+- A claims ledger (`knowledge/claims.md`): each analysis claim with an ID, a status of
+  `confirmed / negative / unknown / hypothesis`, and its evidence or the check that would
+  settle it. "Negative" needs the search that would have found it. Plus one field note per
+  non-obvious lesson (what happened, what we learned, how to apply it).
+- A lab CLI crate (`roundtrip <file>`, `extract <archive> <outdir>`) that refuses to write
+  inside the repo.
+- A game-agnostic asset viewer crate (egui/eframe, rodio for audio) that browses images,
+  audio and string tables, with a small per-game "disc source" plugged in.
+- Capture scripts: these already exist in `C:\rustREWRITE\scripts` (PowerShell): launch,
+  frame, audio and memory, each writing a `manifest.json` with the RPCS3 version, settings,
+  script and waits. Generalise any SUGC-specific paths or title IDs into config, and commit
+  them to this repo (they hold no game data), so they never again live only on my PC.
+
+Optional, only if https://github.com/Deriv3d/SUGCtest still exists: copy
+`tools/publish-check/`, `lab-scripts/pre-commit`, `.github/workflows/ci.yml`,
+`knowledge/README.md`, `docs/LESSONS.md` and `crates/asset-browser/` from it rather than
+rewriting them.
 
 External tools, with links:
 - RPCS3: https://github.com/RPCS3/rpcs3
